@@ -4,14 +4,17 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>88c7c8bb-95ce-4a16-bc14-589898fb6de0</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>ModelPriceComparison.py</StartupFile>
+    <StartupFile>main.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>ModelPriceComparison</Name>
     <RootNamespace>ModelPriceComparison</RootNamespace>
-    <InterpreterId>Global|VisualStudio|kivy_venv (Python 3.10 (64-bit))</InterpreterId>
+    <InterpreterId>Global|PythonCore|3.10</InterpreterId>
+    <LaunchProvider>Standard Python launcher</LaunchProvider>
+    <CommandLineArguments>basket.ini</CommandLineArguments>
+    <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -22,10 +25,12 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="ModelPriceComparison.py" />
+    <Compile Include="main.py" />
   </ItemGroup>
   <ItemGroup>
+    <InterpreterReference Include="Global|PythonCore|3.10" />
     <InterpreterReference Include="Global|VisualStudio|kivy_venv (Python 3.10 (64-bit))" />
+    <InterpreterReference Include="Global|VisualStudio|p10" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
