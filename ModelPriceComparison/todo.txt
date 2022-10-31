@@ -1,0 +1,13 @@
+Search and load product page only if needed, otherwise get info from search page
+
+Search certain element via 'select' of beautiful soup module
+
+Move price data to separate data structure
+
+Convert regex data to utf8 and check regex's
+
+Option in shops.ini to turn off shop
+
+Add more shops
+
+
