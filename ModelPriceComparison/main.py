@@ -29,24 +29,26 @@ def getItemDict(basket_item_line, shops_dict):
             item_dict[price_key] = 'ERR'
             price_counter = price_counter + 1
         search_url = shops_dict[shop]['url_template'] + shops_dict[shop]['search_url_template'].replace('%%%SEARCH_STRING%%%', urllib.parse.quote(basket_item_line))
-        if search_url.rstrip() == '':
+        if search_url.strip() == '':
             continue       
         try:
             search_result = urllib.request.urlopen(search_url).read().decode('utf-8')
             soup = BeautifulSoup(search_result, "html.parser")
-            text = soup.find(attrs={"class": shops_dict[shop]['search_page_template']})
-            item_url = shops_dict[shop]['url_template'] + text.find_all('a')[0].get('href')
-            item_result = urllib.request.urlopen(item_url).read().decode('utf-8')
-            soup = BeautifulSoup(item_result, 'html.parser')
+            text_item = soup.select(".{} .{}".format(shops_dict[shop]['search_page_template_asc'], shops_dict[shop]['search_page_template']))
+            text_item = soup.select(".{} div[class='{}']".format(shops_dict[shop]['search_page_template_asc'], shops_dict[shop]['search_page_template']))
+           #text_item = soup.select(".{} div[class='{}']".format(shops_dict[shop]['search_page_template_asc'], shops_dict[shop]['search_page_template']))
             if root_shop:
+                item_url = shops_dict[shop]['url_template'] + text_item[0].find_all('a')[0].get('href')
+                item_result = urllib.request.urlopen(item_url).read().decode('utf-8')
+                soup = BeautifulSoup(item_result, 'html.parser')
                 item_dict['ItemURL'] = item_url
                 item_dict['Name'] = soup.find('title').string
                 continue
-            #item_price_regex = r"\b(?=\w)" + re.escape(shops_dict[shop]['item_page_price_regex']) + r"\b(?!\w)"
-            item_price_regex = shops_dict[shop]['item_page_price_regex']
-            match = re.search(item_price_regex, item_result)
-            if match:
-              item_dict[price_key] = match.group()
+            #item_price_regex = shops_dict[shop]['item_page_price_regex']
+            #match = re.search(item_price_regex, str(text_item), flags=re.DOTALL)
+            price_text = text_item[0].text
+            #if match:
+            item_dict[price_key] = int(re.sub("[^0-9]", "", price_text.strip()))
         except Exception as e: 
             print(e)
     return item_dict
@@ -69,10 +71,10 @@ def getShopsDict(config_shops):
   for section in config_shops.sections():
     shops_dict[section] = {}
     for key in config_shops[section]:  
-        shops_dict[section][key] = config_shops.get(section, key)
+        shops_dict[section][key] = config_shops.get(section, key).strip('"')
     if shops_dict[section]['root_entry'] == 'true' and not Root_added:
         shops_dict['Root'] = shops_dict.pop(section)
-        Root_added = 'true'
+        Root_added = True
 
   return shops_dict       
 
@@ -143,7 +145,7 @@ def main():
   #  sys.exit(1)  
 
   config_shops = configparser.RawConfigParser()
-  config_shops.read(shops)
+  config_shops.read(shops, encoding='utf-8')
 
   if not os.path.exists(basket):
     createBasketConfig(basket)
@@ -167,7 +169,7 @@ def main():
 
   for item in prices_dict:
       del prices_dict[item]['ItemURL']
-      print('|'.join([f'{value:^20.20}' for value in prices_dict[item].values()]))
+      print('|'.join([f'{str(value):^20.20}' for value in prices_dict[item].values()]))
 
 
 if __name__ == '__main__':
