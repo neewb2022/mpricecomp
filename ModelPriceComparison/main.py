@@ -7,6 +7,7 @@ import urllib
 import urllib.request
 import urllib.parse
 import configparser
+import math
 from bs4 import BeautifulSoup
 
 def InitItemDict(basket_item_line, shops_dict):
@@ -14,6 +15,7 @@ def InitItemDict(basket_item_line, shops_dict):
     item_dict['Name'] = basket_item_line
     #item_dict['Number'] = ''
     item_dict['ItemURL'] = ''
+    item_dict['Prices'] = {}
     
     return item_dict
 
@@ -21,34 +23,37 @@ def getItemDict(basket_item_line, shops_dict):
     item_dict = InitItemDict(basket_item_line, shops_dict)
     price_counter = 0
     for shop in shops_dict:
+        if shops_dict[shop]['shop_active'] == 'false':
+            continue
         root_shop = False
         if shops_dict[shop]['root_entry'] == 'true':
             root_shop = True
         else:
             price_key = 'price' + str(price_counter)
-            item_dict[price_key] = 'ERR'
+            item_dict['Prices'][price_key] = 'NOTFOUND'
             price_counter = price_counter + 1
         search_url = shops_dict[shop]['url_template'] + shops_dict[shop]['search_url_template'].replace('%%%SEARCH_STRING%%%', urllib.parse.quote(basket_item_line))
         if search_url.strip() == '':
             continue       
         try:
-            search_result = urllib.request.urlopen(search_url).read().decode('utf-8')
+            search_result = urllib.request.urlopen(search_url).read()
             soup = BeautifulSoup(search_result, "html.parser")
-            text_item = soup.select(".{} .{}".format(shops_dict[shop]['search_page_template_asc'], shops_dict[shop]['search_page_template']))
-            text_item = soup.select(".{} div[class='{}']".format(shops_dict[shop]['search_page_template_asc'], shops_dict[shop]['search_page_template']))
-           #text_item = soup.select(".{} div[class='{}']".format(shops_dict[shop]['search_page_template_asc'], shops_dict[shop]['search_page_template']))
+            el_item = soup.select(shops_dict[shop]['search_item_template'])
             if root_shop:
-                item_url = shops_dict[shop]['url_template'] + text_item[0].find_all('a')[0].get('href')
+                item_url = shops_dict[shop]['url_template'] + el_item[0].find_all('a')[0].get('href')
                 item_result = urllib.request.urlopen(item_url).read().decode('utf-8')
                 soup = BeautifulSoup(item_result, 'html.parser')
                 item_dict['ItemURL'] = item_url
                 item_dict['Name'] = soup.find('title').string
                 continue
-            #item_price_regex = shops_dict[shop]['item_page_price_regex']
-            #match = re.search(item_price_regex, str(text_item), flags=re.DOTALL)
-            price_text = text_item[0].text
-            #if match:
-            item_dict[price_key] = int(re.sub("[^0-9]", "", price_text.strip()))
+  
+            el_price = el_item[0].select(shops_dict[shop]['search_price_template'])
+            price_text = el_price[0].text
+            item_dict['Prices'][price_key] = float(re.sub("[^0-9,]", "", price_text.strip()).replace(',','.'))
+
+            if shops_dict[shop]['search_instock_template'] != '' and not el_item[0].select(shops_dict[shop]['search_instock_template']):
+                item_dict['Prices'][price_key] = 'OUTOFSTOCK'
+
         except Exception as e: 
             print(e)
     return item_dict
@@ -165,12 +170,13 @@ def main():
 
   del shops_dict['Root']
 
-  print(' '*21 + '|'.join([f'{key:^20.20}' for key in shops_dict.keys()]))
+  print(' '*30 + '|'.join([f'{key:^13.13}' for key in shops_dict.keys() if shops_dict[key]['shop_active'] == 'true']))
 
   for item in prices_dict:
-      del prices_dict[item]['ItemURL']
-      print('|'.join([f'{str(value):^20.20}' for value in prices_dict[item].values()]))
+      #del prices_dict[item]['ItemURL']
+      Name = prices_dict[item]['Name']      
 
+      print(f'{str(Name):^30.30}' + '|'.join([f'{str(value):^13.13}' for value in prices_dict[item]['Prices'].values()]))
 
 if __name__ == '__main__':
   main()

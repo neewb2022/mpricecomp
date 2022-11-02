@@ -1,7 +1,11 @@
-Move price data to separate data structure
+Option for discount
 
-Option in shops.ini to turn off shop
+Option for delivery cost
+
+Show total sums by shop
 
 Add more shops
+
+Web fetching paralleling
 
 
