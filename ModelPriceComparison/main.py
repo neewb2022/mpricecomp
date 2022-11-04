@@ -7,7 +7,6 @@ import urllib
 import urllib.request
 import urllib.parse
 import configparser
-import math
 from bs4 import BeautifulSoup
 
 def InitItemDict(basket_item_line, shops_dict):
@@ -38,21 +37,36 @@ def getItemDict(basket_item_line, shops_dict):
         try:
             search_result = urllib.request.urlopen(search_url).read()
             soup = BeautifulSoup(search_result, "html.parser")
-            el_item = soup.select(shops_dict[shop]['search_item_template'])
+            el_item = soup.select(shops_dict[shop]['search_item_template'])[0]
             if root_shop:
-                item_url = shops_dict[shop]['url_template'] + el_item[0].find_all('a')[0].get('href')
+                item_url = shops_dict[shop]['url_template'] + el_item.find_all('a')[0].get('href')
                 item_result = urllib.request.urlopen(item_url).read().decode('utf-8')
                 soup = BeautifulSoup(item_result, 'html.parser')
                 item_dict['ItemURL'] = item_url
                 item_dict['Name'] = soup.find('title').string
                 continue
-  
-            el_price = el_item[0].select(shops_dict[shop]['search_price_template'])
-            price_text = el_price[0].text
-            item_dict['Prices'][price_key] = float(re.sub("[^0-9,]", "", price_text.strip()).replace(',','.'))
 
-            if shops_dict[shop]['search_instock_template'] != '' and not el_item[0].select(shops_dict[shop]['search_instock_template']):
+            if shops_dict[shop]['info_on_item_page'] == 'true':
+                item_url = shops_dict[shop]['url_template'] + el_item.find_all('a')[0].get('href')
+                item_result = urllib.request.urlopen(item_url).read().decode('utf-8')
+                el_item = BeautifulSoup(item_result, 'html.parser')
+                item_dict['ItemURL'] = item_url
+  
+            if shops_dict[shop]['search_instock_template'] != '' and len(el_item.select(shops_dict[shop]['search_instock_template'])) == 0:
                 item_dict['Prices'][price_key] = 'OUTOFSTOCK'
+                continue
+
+            el_price = el_item.select(shops_dict[shop]['search_price_template'])
+            price_text = el_price[0].text
+            price = float(re.sub("[^0-9,]", "", price_text.strip()).replace(',','.'))
+
+            if shops_dict[shop]['delivery_template_on_item_page'] != '':
+                el_price_delivery = el_item.select(shops_dict[shop]['delivery_template_on_item_page'])
+                price_delivery_text = el_price_delivery[int(shops_dict[shop]['delivery_template_on_item_page_elnum'])].text
+                price_delivery = float(re.sub("[^0-9,]", "", price_delivery_text.strip()).replace(',','.'))
+                price = round(price + price_delivery, 2)               
+
+            item_dict['Prices'][price_key] = price
 
         except Exception as e: 
             print(e)
@@ -143,12 +157,6 @@ def main():
   if not os.path.exists(shops):
     createShopsConfig(shops)
 
-  #try:
-  #  shopsfile = get_file(shops)
-  #except FileNotFoundError:
-  #  print("Can't access shops file")
-  #  sys.exit(1)  
-
   config_shops = configparser.RawConfigParser()
   config_shops.read(shops, encoding='utf-8')
 
@@ -170,13 +178,13 @@ def main():
 
   del shops_dict['Root']
 
-  print(' '*30 + '|'.join([f'{key:^13.13}' for key in shops_dict.keys() if shops_dict[key]['shop_active'] == 'true']))
+  print(' '*50 + '|'.join([f'{key:^13.13}' for key in shops_dict.keys() if shops_dict[key]['shop_active'] == 'true']))
 
   for item in prices_dict:
       #del prices_dict[item]['ItemURL']
       Name = prices_dict[item]['Name']      
 
-      print(f'{str(Name):^30.30}' + '|'.join([f'{str(value):^13.13}' for value in prices_dict[item]['Prices'].values()]))
+      print(f'{str(Name):50.50}' + '|'.join([f'{str(value):^13.13}' for value in prices_dict[item]['Prices'].values()]))
 
 if __name__ == '__main__':
   main()
