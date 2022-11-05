@@ -11,12 +11,29 @@ from bs4 import BeautifulSoup
 
 def InitItemDict(basket_item_line, shops_dict):
     item_dict = {}
-    item_dict['Name'] = basket_item_line
+    item_dict['Name'] = basket_item_line.replace('|', ' ')
     #item_dict['Number'] = ''
     item_dict['ItemURL'] = ''
     item_dict['Prices'] = {}
     
     return item_dict
+
+def getItemSearchString(shop_data, basket_item_line):
+
+    basket_item_line_list = basket_item_line.split('|')
+    basket_item_line_result_def = basket_item_line.replace('|', ' ')
+    if len(basket_item_line_list) < 3:
+        print('Wrong basket file format on line: ' + basket_item_line)
+        basket_item_line_result = basket_item_line_result_def
+    else:
+        if shop_data['search_string_template'] != '':
+            basket_item_line_result = shop_data['search_string_template'].replace('%%VENDOR%%', basket_item_line_list[0])
+            basket_item_line_result = basket_item_line_result.replace('%%NUM%%', basket_item_line_list[1])
+            basket_item_line_result = basket_item_line_result.replace('%%NAME%%', basket_item_line_list[2])
+        else:
+            basket_item_line_result = basket_item_line_result_def
+
+    return basket_item_line_result
 
 def getItemDict(basket_item_line, shops_dict):
     item_dict = InitItemDict(basket_item_line, shops_dict)
@@ -31,7 +48,10 @@ def getItemDict(basket_item_line, shops_dict):
             price_key = 'price' + str(price_counter)
             item_dict['Prices'][price_key] = 'NOTFOUND'
             price_counter = price_counter + 1
-        search_url = shops_dict[shop]['url_template'] + shops_dict[shop]['search_url_template'].replace('%%%SEARCH_STRING%%%', urllib.parse.quote(basket_item_line))
+
+        search_string = getItemSearchString(shops_dict[shop], basket_item_line)
+        search_url = shops_dict[shop]['url_template'] + shops_dict[shop]['search_url_template'].replace('%%%SEARCH_STRING%%%', urllib.parse.quote(search_string))
+        
         if search_url.strip() == '':
             continue       
         try:
@@ -50,8 +70,7 @@ def getItemDict(basket_item_line, shops_dict):
                 item_url = shops_dict[shop]['url_template'] + el_item.find_all('a')[0].get('href')
                 item_result = urllib.request.urlopen(item_url).read().decode('utf-8')
                 el_item = BeautifulSoup(item_result, 'html.parser')
-                item_dict['ItemURL'] = item_url
-  
+        
             if shops_dict[shop]['search_instock_template'] != '' and len(el_item.select(shops_dict[shop]['search_instock_template'])) == 0:
                 item_dict['Prices'][price_key] = 'OUTOFSTOCK'
                 continue
@@ -170,7 +189,7 @@ def main():
     sys.exit(1)
   
   with basketfile as file:
-      basket_lines = [line.rstrip() for line in file]
+      basket_lines = [line.rstrip() for line in file if line.rstrip()[0] != '#']
 
   shops_dict = getShopsDict(config_shops)
   
@@ -178,13 +197,16 @@ def main():
 
   del shops_dict['Root']
 
+  #apply_deliverycost_onitem(shops_dict, prices_dict)
+
   print(' '*50 + '|'.join([f'{key:^13.13}' for key in shops_dict.keys() if shops_dict[key]['shop_active'] == 'true']))
 
-  for item in prices_dict:
-      #del prices_dict[item]['ItemURL']
-      Name = prices_dict[item]['Name']      
-
+  for item in prices_dict:      
+      Name = prices_dict[item]['Name'] 
       print(f'{str(Name):50.50}' + '|'.join([f'{str(value):^13.13}' for value in prices_dict[item]['Prices'].values()]))
+
+#def apply_deliverycost_onitem(shops_dict, prices_dict):
+    
 
 if __name__ == '__main__':
   main()
