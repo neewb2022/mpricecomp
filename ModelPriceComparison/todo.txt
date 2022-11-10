@@ -1,11 +1,3 @@
-Option for discount
-
-Option for delivery cost
-
-Show total sums by shop
-
-Add more shops
-
 Web fetching paralleling
-
+Add cookie support
 

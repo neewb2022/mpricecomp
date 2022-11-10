@@ -1,5 +1,5 @@
-from base64 import decodebytes
-from ntpath import join
+#from base64 import decodebytes
+#from ntpath import join
 import os
 import re
 import sys
@@ -7,7 +7,9 @@ import urllib
 import urllib.request
 import urllib.parse
 import configparser
+import datetime
 from bs4 import BeautifulSoup
+from multiprocessing import Pool
 
 def InitItemDict(basket_item_line, shops_dict):
     item_dict = {}
@@ -15,6 +17,7 @@ def InitItemDict(basket_item_line, shops_dict):
     #item_dict['Number'] = ''
     item_dict['ItemURL'] = ''
     item_dict['Prices'] = {}
+    item_dict['URLs'] = {}
     
     return item_dict
 
@@ -46,19 +49,25 @@ def getItemDict(basket_item_line, shops_dict):
             root_shop = True
         else:
             price_key = 'price' + str(price_counter)
+            url_key = 'price' + str(price_counter)
             item_dict['Prices'][price_key] = 'NOTFOUND'
+            item_dict['URLs'][url_key] = ''
             price_counter = price_counter + 1
 
         search_string = getItemSearchString(shops_dict[shop], basket_item_line)
-        search_url = shops_dict[shop]['url_template'] + shops_dict[shop]['search_url_template'].replace('%%%SEARCH_STRING%%%', urllib.parse.quote(search_string))
-        
+        search_url = shops_dict[shop]['url_template'] + shops_dict[shop]['search_url_template'].replace('%%%SEARCH_STRING%%%', urllib.parse.quote(search_string))         
+                
         if search_url.strip() == '':
             continue       
         try:
+            if root_shop:                
+                item_dict['ItemURL'] = search_url
+            else:
+                item_dict['URLs'][url_key] = search_url
             search_result = urllib.request.urlopen(search_url).read()
             soup = BeautifulSoup(search_result, "html.parser")
             el_item = soup.select(shops_dict[shop]['search_item_template'])[0]
-            if root_shop:
+            if root_shop:                
                 item_url = shops_dict[shop]['url_template'] + el_item.find_all('a')[0].get('href')
                 item_result = urllib.request.urlopen(item_url).read().decode('utf-8')
                 soup = BeautifulSoup(item_result, 'html.parser')
@@ -69,6 +78,7 @@ def getItemDict(basket_item_line, shops_dict):
             if shops_dict[shop]['info_on_item_page'] == 'true':
                 item_url = shops_dict[shop]['url_template'] + el_item.find_all('a')[0].get('href')
                 item_result = urllib.request.urlopen(item_url).read().decode('utf-8')
+                item_dict['URLs'][url_key] = item_url
                 el_item = BeautifulSoup(item_result, 'html.parser')
         
             if shops_dict[shop]['search_instock_template'] != '' and len(el_item.select(shops_dict[shop]['search_instock_template'])) == 0:
@@ -76,8 +86,13 @@ def getItemDict(basket_item_line, shops_dict):
                 continue
 
             el_price = el_item.select(shops_dict[shop]['search_price_template'])
-            price_text = el_price[0].text
-            price = float(re.sub("[^0-9,]", "", price_text.strip()).replace(',','.'))
+            price_text = el_price[0].text.strip()
+
+            if price_text == '':
+                item_dict['Prices'][price_key] = 'OUTOFSTOCK'
+                continue
+
+            price = float(re.sub("[^0-9,]", "", price_text).replace(',','.'))
 
             if shops_dict[shop]['delivery_template_on_item_page'] != '':
                 el_price_delivery = el_item.select(shops_dict[shop]['delivery_template_on_item_page'])
@@ -88,18 +103,26 @@ def getItemDict(basket_item_line, shops_dict):
             item_dict['Prices'][price_key] = price
 
         except Exception as e: 
-            print(e)
+            expt = e
+           #print(e)
     return item_dict
         
 def getPricesDict(basket_lines, shops_dict):
 
     prices_dict = {}
     items_counter = 0
+    total_items = len(basket_lines)
     
     for basket_item_line in basket_lines:
         prices_dict['item' + str(items_counter)] = getItemDict(basket_item_line, shops_dict)    
         items_counter = items_counter + 1
+        completed_perc_str = str(round((items_counter / total_items) * 100, 0))
+        print('Progress: ' + completed_perc_str + "%")
 
+    prices_dict['SUM'] = {}
+    prices_dict['SUM']['Name'] = 'TOTAL:'
+    prices_dict['SUM']['Prices'] = {}
+    
     return prices_dict
             
 
@@ -152,20 +175,115 @@ Rye Field Models RM-5041"""
 def get_file(filename):
    return open(filename, 'rt', encoding='utf-8')
 
+def sum_delivery(shops_dict, prices_dict):
+    
+    shop_num = 0
+
+    for shop_key in shops_dict:
+
+        if shops_dict[shop_key]['shop_active'] != 'true':
+            continue
+
+        prices_dict['SUM']['Prices']['sum' + str(shop_num)] = 0
+        item_keys_toapply = []        
+                
+        for item_key in prices_dict:
+            if item_key == 'SUM':
+                continue
+            if isinstance(prices_dict[item_key]['Prices']['price' + str(shop_num)], float) and prices_dict[item_key]['Prices']['price' + str(shop_num)] != 0:
+                item_keys_toapply.append(item_key)    
+                       
+        for item_key_toapply in item_keys_toapply:            
+            if float(shops_dict[shop_key]['discount_percent']) != 0:
+                prices_dict[item_key_toapply]['Prices']['price' + str(shop_num)] = round(prices_dict[item_key_toapply]['Prices']['price' + str(shop_num)] * (1 - float(shops_dict[shop_key]['discount_percent'])/100),2)
+            prices_dict['SUM']['Prices']['sum' + str(shop_num)] = round(prices_dict['SUM']['Prices']['sum' + str(shop_num)] + prices_dict[item_key_toapply]['Prices']['price' + str(shop_num)], 2)
+
+        if float(shops_dict[shop_key]['free_delivery_threshold']) != 0 and prices_dict['SUM']['Prices']['sum' + str(shop_num)] < float(shops_dict[shop_key]['free_delivery_threshold']):                           
+            prices_dict['SUM']['Prices']['sum' + str(shop_num)] = 0
+            for item_key_toapply in item_keys_toapply:            
+                prices_dict[item_key_toapply]['Prices']['price' + str(shop_num)] = round(prices_dict[item_key_toapply]['Prices']['price' + str(shop_num)] + float(shops_dict[shop_key]['delivery_cost']) / len(item_keys_toapply), 2)
+                prices_dict['SUM']['Prices']['sum' + str(shop_num)] = round(prices_dict['SUM']['Prices']['sum' + str(shop_num)] + prices_dict[item_key_toapply]['Prices']['price' + str(shop_num)], 2)
+                     
+        shop_num = shop_num + 1       
+
+def getHtmExportTemplate():
+    tpl_text = """<!DOCTYPE HTML>
+                    <html>
+                     <head>
+                      <meta charset="utf-8">
+                      <title>%%%TABLE_TITLE%%%</title>
+                     </head>
+                     <body>
+                      <table border="1">
+                       <caption>%%%TABLE_TITLE%%%</caption>
+                       <tr>
+                        %%%UP_TITLES%%%                        
+                       </tr>
+                       %%%ROWS%%%                        
+                      </table>
+                     </body>
+                    </html>"""
+    tpl_text = tpl_text.replace('%%%TABLE_TITLE%%%', 'Basket on ' + str(datetime.datetime.now()))
+    return tpl_text
+
+def getUpTitlesText(shops_dict):    
+    up_titles_text = "<th></th>\n"
+    for shop in shops_dict:
+        if shops_dict[shop]['shop_active'] == 'false':
+            continue
+        shop_url = shops_dict[shop]['url_template']
+        up_titles_text = up_titles_text + f"<th><a href=\"{shop_url}\">{shop}</a></th>\n"      
+        
+    return up_titles_text
+
+
+def getRowsText(prices_dict):
+    rows_text = ''
+    for item in prices_dict:
+      Name = prices_dict[item]['Name'] 
+      if item == 'SUM':
+          rows_text = rows_text +'<tr><td>---</td>' + f'<tr><td>{Name}</td>' + ''.join([f'<td>{value}</td>' for value in prices_dict[item]['Prices'].values()])           
+      else:
+          ItemURL = prices_dict[item]['ItemURL']
+          rows_text = rows_text + f'<tr><td><a href="{ItemURL}">{Name}</a></td>'
+          for price_key in prices_dict[item]['Prices']:
+              price_value = prices_dict[item]['Prices'][price_key]
+              price_url = prices_dict[item]['URLs'][price_key]
+              rows_text = rows_text + f'<td><a href="{price_url}">{price_value}</a></td>'
+        
+    return rows_text
+
+def export_result_file(shops_dict, prices_dict, export_filename):
+    htm_result = getHtmExportTemplate()
+    up_titles_text = getUpTitlesText(shops_dict)
+    htm_result = htm_result.replace('%%%UP_TITLES%%%', up_titles_text)
+    rows_text = getRowsText(prices_dict)
+    htm_result = htm_result.replace('%%%ROWS%%%', rows_text)
+    with open(export_filename, encoding='utf-8', mode='wt') as result_file:
+        result_file.write(htm_result)
+    print()
+
 def main():
   args = sys.argv[1:]
   
   shops = 'default_shops.ini'
+  export = False
 
   if not args:
-    print ("""usage: [--shops <shops .ini-file>] <basket .ini-file>
+    print ("""usage: [--shops <shops .ini-file>] [--export] <basket .ini-file>
     example 1: mpricecomp basket.ini
-    example 2: mpricecomp --shops my_shops.ini my_basket.ini""")
+    example 2: mpricecomp --shops my_shops.ini my_basket.ini
+    example 2: mpricecomp --shops my_shops.ini --export my_basket.ini""")
+
     sys.exit(1)
 
   if args[0] == '--shops':
     shops = args[1]
     del args[0:2]
+
+  if args[0] == '--export':
+    export = True
+    del args[0]
   
   if not args[0] or args[0].rstrip() == '':
     print("Expecting basket file")
@@ -191,22 +309,25 @@ def main():
   with basketfile as file:
       basket_lines = [line.rstrip() for line in file if line.rstrip()[0] != '#']
 
-  shops_dict = getShopsDict(config_shops)
-  
+  shops_dict = getShopsDict(config_shops)  
   prices_dict = getPricesDict(basket_lines, shops_dict)
 
   del shops_dict['Root']
 
-  #apply_deliverycost_onitem(shops_dict, prices_dict)
+  sum_delivery(shops_dict, prices_dict)
 
   print(' '*50 + '|'.join([f'{key:^13.13}' for key in shops_dict.keys() if shops_dict[key]['shop_active'] == 'true']))
 
   for item in prices_dict:      
       Name = prices_dict[item]['Name'] 
+      if item == 'SUM':
+          print('-'* (50 + 13 * len(prices_dict[item]['Prices'])))
+
       print(f'{str(Name):50.50}' + '|'.join([f'{str(value):^13.13}' for value in prices_dict[item]['Prices'].values()]))
 
-#def apply_deliverycost_onitem(shops_dict, prices_dict):
-    
+  if export:
+      export_result_file(shops_dict, prices_dict, os.path.splitext(basket)[0]+'.htm')
+
 
 if __name__ == '__main__':
   main()

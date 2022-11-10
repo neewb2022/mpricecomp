@@ -11,9 +11,9 @@
     <OutputPath>.</OutputPath>
     <Name>ModelPriceComparison</Name>
     <RootNamespace>ModelPriceComparison</RootNamespace>
-    <InterpreterId>Global|PythonCore|3.10</InterpreterId>
+    <InterpreterId>MSBuild|env1|$(MSBuildProjectFullPath)</InterpreterId>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <CommandLineArguments>basket.ini</CommandLineArguments>
+    <CommandLineArguments>--export basket.ini</CommandLineArguments>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
     <Environment>PYDEVD_WARN_SLOW_RESOLVE_TIMEOUT=2</Environment>
   </PropertyGroup>
@@ -29,9 +29,15 @@
     <Compile Include="main.py" />
   </ItemGroup>
   <ItemGroup>
-    <InterpreterReference Include="Global|PythonCore|3.10" />
-    <InterpreterReference Include="Global|VisualStudio|kivy_venv (Python 3.10 (64-bit))" />
-    <InterpreterReference Include="Global|VisualStudio|p10" />
+    <Interpreter Include="env1\">
+      <Id>env1</Id>
+      <Version>3.9</Version>
+      <Description>env1 (Python 3.9 (64-bit))</Description>
+      <InterpreterPath>Scripts\python.exe</InterpreterPath>
+      <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
+      <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
+      <Architecture>X64</Architecture>
+    </Interpreter>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
