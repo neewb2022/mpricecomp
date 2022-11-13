@@ -1,6 +1,4 @@
-#from base64 import decodebytes
-#from ntpath import join
-import os
+﻿import os
 import re
 import sys
 import urllib
@@ -13,8 +11,7 @@ from multiprocessing import Pool
 
 def InitItemDict(basket_item_line, shops_dict):
     item_dict = {}
-    item_dict['Name'] = basket_item_line.replace('|', ' ')
-    #item_dict['Number'] = ''
+    item_dict['Name'] = basket_item_line.replace('|', ' ')    
     item_dict['ItemURL'] = ''
     item_dict['Prices'] = {}
     item_dict['URLs'] = {}
@@ -30,6 +27,16 @@ def getItemSearchString(shop_data, basket_item_line):
         basket_item_line_result = basket_item_line_result_def
     else:
         if shop_data['search_string_template'] != '':
+            overrides_str = shop_data['search_string_overrides'].strip().lower()
+            overrides_list = overrides_str.split('.')
+            if len(overrides_list) == 3:
+                for over_count in [0, 1, 2]:
+                    for override_pair in overrides_list[over_count].split(';'):
+                        if override_pair.strip() == '':
+                            continue
+                        override_pair_list = override_pair.split('|')
+                        basket_item_line_list[over_count] = basket_item_line_list[over_count].lower().replace(override_pair_list[0], override_pair_list[1])                
+
             basket_item_line_result = shop_data['search_string_template'].replace('%%VENDOR%%', basket_item_line_list[0])
             basket_item_line_result = basket_item_line_result.replace('%%NUM%%', basket_item_line_list[1])
             basket_item_line_result = basket_item_line_result.replace('%%NAME%%', basket_item_line_list[2])
@@ -54,7 +61,12 @@ def getItemDict(basket_item_line, shops_dict):
             item_dict['URLs'][url_key] = ''
             price_counter = price_counter + 1
 
+    
         search_string = getItemSearchString(shops_dict[shop], basket_item_line)
+
+        if shops_dict[shop]['search_url_encode'].strip() != '':
+            search_string = search_string.encode(shops_dict[shop]['search_url_encode'].strip())
+
         search_url = shops_dict[shop]['url_template'] + shops_dict[shop]['search_url_template'].replace('%%%SEARCH_STRING%%%', urllib.parse.quote(search_string))         
                 
         if search_url.strip() == '':
@@ -67,12 +79,25 @@ def getItemDict(basket_item_line, shops_dict):
             search_result = urllib.request.urlopen(search_url).read()
             soup = BeautifulSoup(search_result, "html.parser")
             el_item = soup.select(shops_dict[shop]['search_item_template'])[0]
+
+            #Check if we've found wrong item
+            if shops_dict[shop]['add_search_check'] == 'true':
+                el_item_text = ''.join(el_item.find_all(text=True, recursive=True)).strip().lower()
+                item_text_cheched = True
+                #for check_basket_string in basket_item_line.split('|'):
+                for check_basket_string in search_string.split(' '):
+                    if el_item_text.find(check_basket_string.lower()) == -1:
+                        item_text_cheched = False
+                        break
+                if item_text_cheched == False:
+                    continue            
+
             if root_shop:                
                 item_url = shops_dict[shop]['url_template'] + el_item.find_all('a')[0].get('href')
                 item_result = urllib.request.urlopen(item_url).read().decode('utf-8')
                 soup = BeautifulSoup(item_result, 'html.parser')
                 item_dict['ItemURL'] = item_url
-                item_dict['Name'] = soup.find('title').string
+                item_dict['Name'] = str(soup.find('title').string)
                 continue
 
             if shops_dict[shop]['info_on_item_page'] == 'true':
@@ -86,7 +111,8 @@ def getItemDict(basket_item_line, shops_dict):
                 continue
 
             el_price = el_item.select(shops_dict[shop]['search_price_template'])
-            price_text = el_price[0].text.strip()
+            #price_text = el_price[0].text.strip() 
+            price_text = ''.join(el_price[0].find_all(text=True, recursive=False)).strip() 
 
             if price_text == '':
                 item_dict['Prices'][price_key] = 'OUTOFSTOCK'
@@ -105,26 +131,62 @@ def getItemDict(basket_item_line, shops_dict):
         except Exception as e: 
             expt = e
            #print(e)
-    return item_dict
-        
-def getPricesDict(basket_lines, shops_dict):
-
-    prices_dict = {}
-    items_counter = 0
-    total_items = len(basket_lines)
     
-    for basket_item_line in basket_lines:
-        prices_dict['item' + str(items_counter)] = getItemDict(basket_item_line, shops_dict)    
-        items_counter = items_counter + 1
-        completed_perc_str = str(round((items_counter / total_items) * 100, 0))
-        print('Progress: ' + completed_perc_str + "%")
+    return item_dict        
+        
+def getPricesDict(basket_lines, shops_dict, singlethread):
+    
+    prices_dict = {}
+    prices_async_dict = {}
+    items_counter = 0    
 
+    pool = Pool()
+
+    if singlethread:
+        #non multiprocess ver
+        for basket_item_line in basket_lines:
+            printProgressBar(items_counter,len(basket_lines))
+            prices_dict['item' + str(items_counter)] = getItemDict(basket_item_line, shops_dict)
+            items_counter = items_counter + 1         
+    else:    
+        for basket_item_line in basket_lines:
+            prices_async_dict['item' + str(items_counter)] = pool.apply_async(getItemDict, [basket_item_line, shops_dict])
+            items_counter = items_counter + 1
+
+        items_counter = 0
+
+        for basket_item_line in basket_lines:
+            printProgressBar(items_counter,len(basket_lines))
+            prices_dict['item' + str(items_counter)] = prices_async_dict['item' + str(items_counter)].get(timeout=100)
+            items_counter = items_counter + 1
+          
+    
     prices_dict['SUM'] = {}
     prices_dict['SUM']['Name'] = 'TOTAL:'
     prices_dict['SUM']['Prices'] = {}
     
     return prices_dict
             
+def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
+    """
+    Call in a loop to create terminal progress bar
+    @params:
+        iteration   - Required  : current iteration (Int)
+        total       - Required  : total iterations (Int)
+        prefix      - Optional  : prefix string (Str)
+        suffix      - Optional  : suffix string (Str)
+        decimals    - Optional  : positive number of decimals in percent complete (Int)
+        length      - Optional  : character length of bar (Int)
+        fill        - Optional  : bar fill character (Str)
+        printEnd    - Optional  : end character (e.g. "\r", "\r\n") (Str)
+    """
+    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+    filledLength = int(length * iteration // total)
+    bar = fill * filledLength + '-' * (length - filledLength)
+    print(f'\r{prefix} |{bar}| {percent}% {suffix}', end = printEnd)
+    # Print New Line on Complete
+    if iteration == total: 
+        print()
 
 def getShopsDict(config_shops):
   shops_dict = {}
@@ -261,13 +323,16 @@ def export_result_file(shops_dict, prices_dict, export_filename):
     htm_result = htm_result.replace('%%%ROWS%%%', rows_text)
     with open(export_filename, encoding='utf-8', mode='wt') as result_file:
         result_file.write(htm_result)
+        print('Exported to: ' + result_file.name)
     print()
 
 def main():
+    
   args = sys.argv[1:]
   
   shops = 'default_shops.ini'
   export = False
+  singlethread = False
 
   if not args:
     print ("""usage: [--shops <shops .ini-file>] [--export] <basket .ini-file>
@@ -281,9 +346,13 @@ def main():
     shops = args[1]
     del args[0:2]
 
+  if args[0] == '--singlethread':
+    singlethread = True
+    del args[0]
+
   if args[0] == '--export':
     export = True
-    del args[0]
+    del args[0]      
   
   if not args[0] or args[0].rstrip() == '':
     print("Expecting basket file")
@@ -310,7 +379,7 @@ def main():
       basket_lines = [line.rstrip() for line in file if line.rstrip()[0] != '#']
 
   shops_dict = getShopsDict(config_shops)  
-  prices_dict = getPricesDict(basket_lines, shops_dict)
+  prices_dict = getPricesDict(basket_lines, shops_dict, singlethread)
 
   del shops_dict['Root']
 
@@ -327,7 +396,6 @@ def main():
 
   if export:
       export_result_file(shops_dict, prices_dict, os.path.splitext(basket)[0]+'.htm')
-
 
 if __name__ == '__main__':
   main()
