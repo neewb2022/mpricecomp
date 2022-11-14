@@ -57,7 +57,7 @@ def getItemDict(basket_item_line, shops_dict):
         else:
             price_key = 'price' + str(price_counter)
             url_key = 'price' + str(price_counter)
-            item_dict['Prices'][price_key] = 'NOTFOUND'
+            item_dict['Prices'][price_key] = '_'
             item_dict['URLs'][url_key] = ''
             price_counter = price_counter + 1
 
@@ -107,7 +107,7 @@ def getItemDict(basket_item_line, shops_dict):
                 el_item = BeautifulSoup(item_result, 'html.parser')
         
             if shops_dict[shop]['search_instock_template'] != '' and len(el_item.select(shops_dict[shop]['search_instock_template'])) == 0:
-                item_dict['Prices'][price_key] = 'OUTOFSTOCK'
+                item_dict['Prices'][price_key] = 'OOS'
                 continue
 
             el_price = el_item.select(shops_dict[shop]['search_price_template'])
@@ -115,7 +115,7 @@ def getItemDict(basket_item_line, shops_dict):
             price_text = ''.join(el_price[0].find_all(text=True, recursive=False)).strip() 
 
             if price_text == '':
-                item_dict['Prices'][price_key] = 'OUTOFSTOCK'
+                item_dict['Prices'][price_key] = 'OOS'
                 continue
 
             price = float(re.sub("[^0-9,]", "", price_text).replace(',','.'))
@@ -308,10 +308,32 @@ def getRowsText(prices_dict):
       else:
           ItemURL = prices_dict[item]['ItemURL']
           rows_text = rows_text + f'<tr><td><a href="{ItemURL}">{Name}</a></td>'
+
+          min_price = 10000000000000
+          min_prices_keys = []
+
+          for price_key in prices_dict[item]['Prices']:
+              try:
+                  if float(prices_dict[item]['Prices'][price_key]) <= min_price:
+                      min_price = prices_dict[item]['Prices'][price_key]
+              except ValueError:
+                  continue
+
           for price_key in prices_dict[item]['Prices']:
               price_value = prices_dict[item]['Prices'][price_key]
               price_url = prices_dict[item]['URLs'][price_key]
-              rows_text = rows_text + f'<td><a href="{price_url}">{price_value}</a></td>'
+              
+              mark_min_price = False              
+              try:
+                  if float(prices_dict[item]['Prices'][price_key]) == min_price:
+                      mark_min_price = True
+              except ValueError:
+                  mark_min_price = False                  
+              
+              if mark_min_price:
+                  rows_text = rows_text + f'<td bgcolor="#90EE90"><a href="{price_url}">{price_value}</a></td>'
+              else:
+                  rows_text = rows_text + f'<td><a href="{price_url}">{price_value}</a></td>'
         
     return rows_text
 

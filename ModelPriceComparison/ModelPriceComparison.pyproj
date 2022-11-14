@@ -13,7 +13,7 @@
     <RootNamespace>ModelPriceComparison</RootNamespace>
     <InterpreterId>MSBuild|env1|$(MSBuildProjectFullPath)</InterpreterId>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <CommandLineArguments>--export basket.ini</CommandLineArguments>
+    <CommandLineArguments>--export basket1.ini</CommandLineArguments>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
     <Environment>PYDEVD_WARN_SLOW_RESOLVE_TIMEOUT=2</Environment>
   </PropertyGroup>
