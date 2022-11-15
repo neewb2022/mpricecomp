@@ -16,6 +16,7 @@
     <CommandLineArguments>--export basket1.ini</CommandLineArguments>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
     <Environment>PYDEVD_WARN_SLOW_RESOLVE_TIMEOUT=2</Environment>
+    <IsWindowsApplication>False</IsWindowsApplication>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
