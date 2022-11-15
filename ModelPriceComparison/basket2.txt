@@ -1,3 +1,0 @@
-Add override support for search string
-Add cookie support
-

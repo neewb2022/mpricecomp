@@ -157,7 +157,7 @@ def getPricesDict(basket_lines, shops_dict, singlethread):
 
         for basket_item_line in basket_lines:
             printProgressBar(items_counter,len(basket_lines))
-            prices_dict['item' + str(items_counter)] = prices_async_dict['item' + str(items_counter)].get(timeout=100)
+            prices_dict['item' + str(items_counter)] = prices_async_dict['item' + str(items_counter)].get(timeout=200)
             items_counter = items_counter + 1
           
     
