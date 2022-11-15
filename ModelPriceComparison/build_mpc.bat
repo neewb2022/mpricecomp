@@ -1,1 +1,1 @@
-%CD%\env1\Scripts\pyinstaller.exe --onefile --workpath ..\build --name mpricecomp main.py
+%CD%\env1\Scripts\pyinstaller.exe --onefile --version-file=file_version_info.txt -i icon.png --workpath ..\build --name mpricecomp main.py

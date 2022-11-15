@@ -1,0 +1,1 @@
+%CD%\env1\Scripts\create-version-file.exe file_version_info.yml --outfile file_version_info.txt
