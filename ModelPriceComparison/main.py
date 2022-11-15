@@ -6,6 +6,8 @@ import urllib.request
 import urllib.parse
 import configparser
 import datetime
+import multiprocessing
+from argparse import ArgumentParser
 from bs4 import BeautifulSoup
 from multiprocessing import Pool
 
@@ -246,10 +248,7 @@ shop_active = true
 [ali]
 url_template = "https://aliexpress.ru"
 search_string_template = %%VENDOR%% %%NUM%%
-#search_url_template = "/wholesale?SearchText=%%%SEARCH_STRING%%%&SortType=total_tranpro_desc&g=y&page=1"
-#search_url_template = "/wholesale?SearchText=%%%SEARCH_STRING%%%&SortType=default&g=y&page=1"
 search_url_template = "/wholesale?SearchText=%%%SEARCH_STRING%%%"
-#search_url_template = "/category/202000013/toys-hobbies/w-%%%SEARCH_STRING%%%"
 search_string_overrides = "Rye Field Model|RFM;Звезда|Zvezda.."
 search_url_encode = ""
 search_item_template = "div[class='product-snippet_ProductSnippet__content__1ettdy']"
@@ -427,47 +426,34 @@ def export_result_file(shops_dict, prices_dict, export_filename):
 
 def main():
   """
-   Gathers all data, generates and writes export html-file with table
-   @params:        
-       prices_dict      - Required  : dict with prices info (dict element)                
-       shops_dict       - Required  : dict with shops info (dict element)                        
-       export_filename  - Required  : path to export html file (Str)                        
+   Gathers all data, generates displays and writes export html-file with table   
   """      
-  args = sys.argv[1:]
+
+  parser = ArgumentParser(description='Fetches model kits price data from configured web-sources, displays and exports it.')
+  parser.add_argument("-b", "--basket", dest="basket",
+                    help="name of basket file (will be created if not specified or created with specified name if doesn't exist)")
+  parser.add_argument("-s", "--shops", dest="shops",
+                    help="name of shops config file (will be created if not specified or created with specified name if doesn't exist)")
+  parser.add_argument("-e", "--export", dest="exportfile",
+                    help="specify htm-file name to export result (will be created by default similar to basket config name)")
+  parser.add_argument("-st", "--singlethread", action="store_true",
+                    help="data-fetching in single-threaded mode (instead of multi-threaded by default) - slow but less resource-hungry")
+
+  args = parser.parse_args() 
   
   shops = 'default_shops.ini'
-  export = False
-  singlethread = False
-
-  if not args:
-    print ("""usage: [--singlethread] [--shops <shops .ini-file>] [--export] <basket .ini-file>
-    example 1: mpricecomp --singlethread --export basket1.ini 
-        Launches data fetch in sigle-thread (slow but less resource hungry), using specified basket config file, exports results in html-file
-    example 2: mpricecomp basket.ini
-        Launches data fetch in multi-thread (default), using specified basket config file
-    example 3: mpricecomp --shops my_shops.ini my_basket.ini
-        Launches data fetch in multi-thread (default), using specified shops config file, using specified basket config file""")
-
-    sys.exit(1)
-
-  if args[0] == '--shops':
-    shops = args[1]
-    del args[0:2]
-
-  if args[0] == '--singlethread':
-    singlethread = True
-    del args[0]
-
-  if args[0] == '--export':
-    export = True
-    del args[0]      
+  basket = 'default_basket.ini'
+  exportfilename = 'default_basket.htm'
+    
+  if args.shops != None:
+    shops = args.shops    
+  if args.basket != None:
+    basket = args.basket    
+  if args.exportfile != None:
+    exportfilename = args.exportfile    
   
-  if not args[0] or args[0].rstrip() == '':
-    print("Expecting basket file")
-    sys.exit(1)
-  
-  basket = args[0]
-
+  singlethread = args.singlethread
+    
   if not os.path.exists(shops):
     createShopsConfig(shops)
 
@@ -481,6 +467,7 @@ def main():
     basketfile = get_file(basket)
   except FileNotFoundError:
     print("Can't access basket file")
+    input("Press Enter to continue...")
     sys.exit(1)
   
   with basketfile as file:
@@ -493,6 +480,7 @@ def main():
 
   sum_delivery(shops_dict, prices_dict)
 
+  print('\n')
   print(' '*50 + '|'.join([f'{key:^13.13}' for key in shops_dict.keys() if shops_dict[key]['shop_active'] == 'true']))
 
   for item in prices_dict:      
@@ -501,9 +489,9 @@ def main():
           print('-'* (50 + 13 * len(prices_dict[item]['Prices'])))
 
       print(f'{str(Name):50.50}' + '|'.join([f'{str(value):^13.13}' for value in prices_dict[item]['Prices'].values()]))
-
-  if export:
-      export_result_file(shops_dict, prices_dict, os.path.splitext(basket)[0]+'.htm')
+        
+  export_result_file(shops_dict, prices_dict, exportfilename)
 
 if __name__ == '__main__':
+  multiprocessing.freeze_support()
   main()

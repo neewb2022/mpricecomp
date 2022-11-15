@@ -1,0 +1,1 @@
+%CD%\env1\Scripts\pyinstaller.exe --onefile --workpath ..\build --name mpricecomp main.py

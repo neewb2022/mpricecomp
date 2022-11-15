@@ -13,7 +13,7 @@
     <RootNamespace>ModelPriceComparison</RootNamespace>
     <InterpreterId>MSBuild|env1|$(MSBuildProjectFullPath)</InterpreterId>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <CommandLineArguments>--export basket1.ini</CommandLineArguments>
+    <CommandLineArguments>-b tmp_basket.ini -s tmp_shops.ini -e exmp_export.htm -st</CommandLineArguments>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
     <Environment>PYDEVD_WARN_SLOW_RESOLVE_TIMEOUT=2</Environment>
     <IsWindowsApplication>False</IsWindowsApplication>
@@ -39,6 +39,9 @@
       <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
       <Architecture>X64</Architecture>
     </Interpreter>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="requirements.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
