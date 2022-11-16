@@ -1,5 +1,5 @@
 # ModelPriceComparison
-MODEL PRICE COMPARISON README 1.0.0.0
+README 1.0.0.0
 ----------------------
 
 CONTENTS OF THIS FILE
