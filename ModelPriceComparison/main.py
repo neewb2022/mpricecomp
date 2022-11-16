@@ -1,6 +1,7 @@
 ﻿import os
 import re
 import sys
+from tkinter.messagebox import Message
 import urllib
 import urllib.request
 import urllib.parse
@@ -262,6 +263,253 @@ free_delivery_threshold = 0
 delivery_cost = 0
 discount_percent = 0
 root_entry = false
+shop_active = true
+
+[Model-lavka]
+url_template = "https://model-lavka.ru"
+search_string_template = %%VENDOR%% %%NUM%%
+search_url_template = "/catalog?query=%%%SEARCH_STRING%%%&_csrf=&name=&priceFrom=&priceTo=&availability=&availability=all&scale=&per-page=1"
+search_string_overrides = "USTAR|Takom;HobbyBoss|Hobby Boss.."
+search_url_encode = ""
+search_item_template = ".item__wrap div[class='item__bottom']"
+search_price_template = "div[class='price']"
+search_instock_template = "div[class='shiping__wrap']"
+info_on_item_page = false
+add_search_check = false
+delivery_template_on_item_page = ""
+delivery_template_on_item_page_elnum = 
+delivery_cost = 200
+free_delivery_threshold = 2000
+discount_percent = 9
+root_entry = false
+shop_active = true
+
+[i-modelist]
+url_template = "https://i-modelist.ru"
+search_string_template = %%NUM%% %%VENDOR%%
+search_url_template = "/search.html?all=1&q=%%%SEARCH_STRING%%%&x=0&y=0"
+search_string_overrides = "Hobby Boss|HobbyBoss;Freedom Model Kits|Hero;Trumpeter|Трубач.."
+search_url_encode = ""
+search_item_template = ".container div[class='prod-item']"
+search_price_template = ".prod-item__price span[data-thousand-separate='']"
+search_instock_template = "i[class='icon icon_cart text-white txt_12px mr-2']"
+info_on_item_page = false
+add_search_check = false
+delivery_template_on_item_page = ""
+delivery_template_on_item_page_elnum = 
+delivery_cost = 200
+free_delivery_threshold = 3000
+discount_percent = 0
+root_entry = false
+shop_active = true
+
+[platcdarm]
+url_template = "https://www.platcdarm.ru"
+search_string_template = %%NUM%% %%VENDOR%%
+search_string_overrides = "Rye Field Model|RFM;HobbyBoss|Hobby Boss.RM-|."
+search_url_encode = ""
+search_url_template = "/tovar/?q=%%%SEARCH_STRING%%%"
+search_item_template = ".catalog div[class='product']"
+search_price_template = "div .price"
+search_instock_template = "div[class='product_submit']"
+info_on_item_page = false
+add_search_check = false
+delivery_template_on_item_page = ""
+delivery_template_on_item_page_elnum = 
+delivery_cost = 200
+free_delivery_threshold = 3000
+discount_percent = 0
+root_entry = false
+shop_active = true
+
+[Modelist_lad]
+url_template = "https://spb.modelist.spb.ru"
+search_string_template = %%NUM%% %%VENDOR%%
+search_string_overrides = "Freedom Model Kits|Hero;HobbyBoss|Hobby Boss.."
+search_url_encode = ""
+search_url_template = "/search/index.php?q=%%%SEARCH_STRING%%%&s="
+search_item_template = ".container div[class='catalog_item']"
+search_price_template = "span[class='main_price']"
+search_instock_template = "span[class='main_price']"
+info_on_item_page = false
+add_search_check = false
+delivery_template_on_item_page = ""
+delivery_template_on_item_page_elnum = 
+delivery_cost = 200
+free_delivery_threshold = 0
+discount_percent = 0
+root_entry = false
+shop_active = true
+
+[Modelist_sen]
+url_template = "https://sennaya.modelist.spb.ru"
+search_string_template = %%NUM%% %%VENDOR%%
+search_string_overrides = "Freedom Model Kits|Hero;HobbyBoss|Hobby Boss.."
+search_url_encode = ""
+search_url_template = "/search/index.php?q=%%%SEARCH_STRING%%%&s="
+search_item_template = ".container div[class='catalog_item']"
+search_price_template = "span[class='main_price']"
+search_instock_template = "span[class='main_price']"
+info_on_item_page = false
+add_search_check = false
+delivery_template_on_item_page = ""
+delivery_template_on_item_page_elnum = 
+delivery_cost = 200
+free_delivery_threshold = 0
+discount_percent = 0
+root_entry = false
+shop_active = true
+
+[Modelist_koms]
+url_template = "https://lavka.modelist.spb.ru"
+search_string_template = %%NUM%% %%VENDOR%%
+search_string_overrides = "Freedom Model Kits|Hero;HobbyBoss|Hobby Boss.."
+search_url_encode = ""
+search_url_template = "/search/index.php?q=%%%SEARCH_STRING%%%&s="
+search_item_template = ".container div[class='catalog_item']"
+search_price_template = "span[class='main_price']"
+search_instock_template = "span[class='main_price']"
+info_on_item_page = false
+add_search_check = false
+delivery_template_on_item_page = ""
+delivery_template_on_item_page_elnum = 
+delivery_cost = 200
+free_delivery_threshold = 0
+discount_percent = 0
+root_entry = false
+shop_active = true
+
+[Modelist_len]
+url_template = "https://msk.modelist.spb.ru"
+search_string_template = %%NUM%% %%VENDOR%%
+search_string_overrides = "Freedom Model Kits|Hero;HobbyBoss|Hobby Boss.."
+search_url_encode = ""
+search_url_template = "/search/index.php?q=%%%SEARCH_STRING%%%&s="
+search_item_template = ".container div[class='catalog_item']"
+search_price_template = "span[class='main_price']"
+search_instock_template = "span[class='main_price']"
+info_on_item_page = false
+add_search_check = false
+delivery_template_on_item_page = ""
+delivery_template_on_item_page_elnum = 
+delivery_cost = 200
+free_delivery_threshold = 0
+discount_percent = 0
+root_entry = false
+shop_active = true
+
+[Arma-models]
+url_template = "https://arma-models.ru"
+search_string_template = %%VENDOR%% %%NUM%%
+search_string_overrides = "HobbyBoss|Hobby Boss.."
+search_url_encode = "cp1251"
+search_url_template = "/catalog/?q=%%%SEARCH_STRING%%%&how=r"
+search_item_template = ".container div[class='inner_wrap TYPE_1']"
+search_price_template = "span[class='price_value']"
+search_instock_template = "span[class='icon stock']"
+info_on_item_page = false
+add_search_check = false
+delivery_template_on_item_page = ""
+delivery_template_on_item_page_elnum = 
+delivery_cost = 0
+free_delivery_threshold = 0
+discount_percent = 0
+root_entry = false
+shop_active = true
+
+[mirmodelista]
+url_template = "https://mirmodelista.ru"
+search_string_template = %%NUM%%
+search_string_overrides = ""
+search_url_encode = ""
+search_url_template = "/searchSmart/?query=%22%%%SEARCH_STRING%%%%22"
+search_item_template = ".item_container_small div[class='item_one']"
+search_price_template = "div[class='item_one_price']"
+search_instock_template = "a[class='btn-ya-go item_one_to_cart btn-buy smallbut1']"
+info_on_item_page = false
+add_search_check = true
+delivery_template_on_item_page = ""
+delivery_template_on_item_page_elnum = 
+delivery_cost = 200
+free_delivery_threshold = 7500
+discount_percent = 0
+root_entry = false
+shop_active = true
+
+[mirmodspb]
+url_template = "https://mirmodspb.ru"
+search_string_template = %%NUM%%
+search_string_overrides = ""
+search_url_encode = ""
+search_url_template = "/search?search=%%%SEARCH_STRING%%%"
+search_item_template = ".site-main__inner li"
+search_price_template = ".price-current strong"
+search_instock_template = "button[class='shop2-product-btn']"
+info_on_item_page = true
+add_search_check = true
+delivery_template_on_item_page = ""
+delivery_template_on_item_page_elnum = 
+delivery_cost = 350
+free_delivery_threshold = 0
+discount_percent = 0
+root_entry = false
+shop_active = true
+
+[modelismus]
+url_template = "https://www.modelismus.com"
+search_string_template = %%NUM%% %%VENDOR%%
+search_url_template = "/search?q=%%%SEARCH_STRING%%%"
+search_string_overrides = "Freedom Model Kits|Hero.."
+search_url_encode = ""
+search_item_template = ".sDS4bMt li[class='sERPSMg']"
+search_price_template = "span[class='sQq4biu']"
+search_instock_template = "span[class='soJ2zmj']"
+info_on_item_page = false
+add_search_check = true
+delivery_template_on_item_page = ""
+delivery_template_on_item_page_elnum = 
+delivery_cost = 310
+free_delivery_threshold = 0
+discount_percent = 0
+root_entry = false
+shop_active = true
+
+[ruscale]
+url_template = "https://ruscale.ru"
+search_string_template = %%VENDOR%% %%NUM%%
+search_url_template = "/search/?query=%%%SEARCH_STRING%%%"
+search_string_overrides = "Rye Field Model|RFM Model.."
+search_url_encode = ""
+search_item_template = ".s-products-list div[class='s-product-block']"
+search_price_template = "span[class='s-price']"
+search_instock_template = "input[class='s-button js-add-button']"
+info_on_item_page = false
+add_search_check = true
+delivery_template_on_item_page = ""
+delivery_template_on_item_page_elnum = 
+delivery_cost = 300
+free_delivery_threshold = 0
+discount_percent = 0
+root_entry = false
+shop_active = true
+
+[worldofscale]
+url_template = "https://worldofscale.ru"
+search_string_template = %%VENDOR%% %%NUM%%
+search_url_template = "/products?keyword=%%%SEARCH_STRING%%%"
+search_string_overrides = ""
+search_url_encode = ""
+search_item_template = "div[class='row m-b-1 ProductView product']"
+search_price_template = ".price span[itemprop='price']"
+search_instock_template = "button[class='btn btn-primary']"
+info_on_item_page = false
+add_search_check = false
+delivery_template_on_item_page = ""
+delivery_template_on_item_page_elnum = 
+delivery_cost = 300
+free_delivery_threshold = 0
+discount_percent = 0
+root_entry = false
 shop_active = true"""
            
     with open(path, encoding='utf-8', mode='wt') as config_file:
@@ -424,6 +672,20 @@ def export_result_file(shops_dict, prices_dict, export_filename):
         print('Exported to: ' + result_file.name)
     print()
 
+def appquit(message, dontpause = False):
+    """
+    Quiting app with specified message with waiting or not of user input
+    @params:        
+        message          - Required  : message displayed before exit (Str)                
+        dontpause        - Optional  : pause and wait user input before exiting or not (bool)                                
+    """ 
+    if message.strip() != '':
+        print(message)
+    if not dontpause:
+        os.system('pause')        
+    else:
+        sys.exit()
+
 def main():
   """
    Gathers all data, generates displays and writes export html-file with table   
@@ -438,6 +700,8 @@ def main():
                     help="specify htm-file name to export result (will be created by default similar to basket config name)")
   parser.add_argument("-st", "--singlethread", action="store_true",
                     help="data-fetching in single-threaded mode (instead of multi-threaded by default) - slow but less resource-hungry")
+  parser.add_argument("-dp", "--dontpause", action="store_true",
+                    help="dont pause and wait for input after execution")
 
   args = parser.parse_args() 
   
@@ -446,29 +710,50 @@ def main():
   exportfilename = 'default_basket.htm'
     
   if args.shops != None:
-    shops = args.shops    
+    shops = args.shops  
+  else:
+    print('Shops config file not specified, using default destination: ' + shops)  
   if args.basket != None:
     basket = args.basket    
+  else:
+    print('Basket config file not specified, using default destination: ' + basket)  
   if args.exportfile != None:
     exportfilename = args.exportfile    
   
   singlethread = args.singlethread
+  dontpause = args.dontpause
+
+  if singlethread:
+      print('Fetchinbg data in single-threaded mode, may be slow..')  
     
-  if not os.path.exists(shops):
-    createShopsConfig(shops)
+  try:
+      if not os.path.exists(shops):
+          print('Can\'t find shops config file, creating default one in: ' + shops)      
+          createShopsConfig(shops)
+      else:
+          print('Found shops config file in: ' + shops)      
+  except:
+      appquit('Error while creating shop config file in:' + shops, dontpause)      
 
-  config_shops = configparser.RawConfigParser()
-  config_shops.read(shops, encoding='utf-8')
+  try:
+      config_shops = configparser.RawConfigParser()
+      config_shops.read(shops, encoding='utf-8')
+  except:
+      appquit('Error reading shops congif file in:' + shops, dontpause)      
 
-  if not os.path.exists(basket):
-    createBasketConfig(basket)
+  try:
+      if not os.path.exists(basket):
+          print('Can\'t find basket config file, creating default one in: ' + basket)      
+          createBasketConfig(basket)
+      else:
+          print('Found basket config file in: ' + shops)      
+  except:
+      appquit('Error while creating shop config file in:' + basket, dontpause)     
    
   try:
-    basketfile = get_file(basket)
+      basketfile = get_file(basket)
   except FileNotFoundError:
-    print("Can't access basket file")
-    input("Press Enter to continue...")
-    sys.exit(1)
+      appquit('Error accessing basket config file in:' + basket, dontpause)     
   
   with basketfile as file:
       basket_lines = [line.rstrip() for line in file if line.rstrip()[0] != '#']
@@ -491,6 +776,8 @@ def main():
       print(f'{str(Name):50.50}' + '|'.join([f'{str(value):^13.13}' for value in prices_dict[item]['Prices'].values()]))
         
   export_result_file(shops_dict, prices_dict, exportfilename)
+  
+  appquit('', dontpause)
 
 if __name__ == '__main__':
   multiprocessing.freeze_support()
