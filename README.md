@@ -1,8 +1,12 @@
 # ModelPriceComparison
 <<<<<<< HEAD
+<<<<<<< HEAD
 README 1.0.0.0
 =======
 MODEL PRICE COMPARISON README 1.0.0.0
+>>>>>>> Update README.md
+=======
+README 1.0.0.0
 >>>>>>> Update README.md
 ----------------------
 
