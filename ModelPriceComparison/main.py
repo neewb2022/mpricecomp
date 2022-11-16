@@ -1,7 +1,6 @@
 ﻿import os
 import re
 import sys
-from tkinter.messagebox import Message
 import urllib
 import urllib.request
 import urllib.parse
@@ -247,22 +246,41 @@ add_search_check = false
 shop_active = true
 
 [ali]
+# URL of remote source
 url_template = "https://aliexpress.ru"
+# Template to form search string for each basket item. Special keywords %%VENDOR%%, %%NUM%%, %%NAME%% will be replaced
+# with corresponding values from basket config file.
 search_string_template = %%VENDOR%% %%NUM%%
+# Template for remote web-source search URL, keyword %%%SEARCH_STRING%%% will be replaced with value formed from 'search_string_template'
 search_url_template = "/wholesale?SearchText=%%%SEARCH_STRING%%%"
+# Web-source specific search overrides for better search results. '.' separates groups: Vendor, Num, Name. ';' separates replacement pairs in each group.
+# "|" separates value to replace and replacement value in each pair.
 search_string_overrides = "Rye Field Model|RFM;Звезда|Zvezda.."
+# (optional) Force to encode search string for search URL in specific codepage. Rarely needed
 search_url_encode = ""
+# Template to find code block of desired item/items in web-page
 search_item_template = "div[class='product-snippet_ProductSnippet__content__1ettdy']"
+# Template to find price code block of desired item/items in web-page
 search_price_template = "div[class='snow-price_SnowPrice__mainS__18x8np']" 
+# (optional) Template to find price code block for determining item availability
 search_instock_template = ""
+# Needed for some shops if full desired info only situated on item page
 info_on_item_page = true
+# Needed for some shops to check if search result corresponds to search string
 add_search_check = false
+# (optional) Needed for some shops (ali for example) to find block with delivery price on item page
 delivery_template_on_item_page = "span[class='snow-ali-kit_Typography__base__1shggo snow-ali-kit_Typography__base__1shggo snow-ali-kit_Typography__sizeTextM__1shggo']"
+# Needed for some shops (ali for example) to find block with delivery price on item page
 delivery_template_on_item_page_elnum = 1
+# If shop has delivery price and certain amount of your order (basket) to make delivery free of charge - this threshold can be entered here.
 free_delivery_threshold = 0
+# If shop has delivery price - amount can be entered here. During calculation deliver cost splits equally between item prices of certain shop.
 delivery_cost = 0
+# Discount in percent from 100 applied to all items from shop before delivery cost.
 discount_percent = 0
+# Marks root web-source (scalemates for exmpl.) to download item full naming, root entry not used to search price data
 root_entry = false
+# Shop-entries with 'false' in this line will be skipped during data-fetching
 shop_active = true
 
 [Model-lavka]
@@ -510,7 +528,7 @@ delivery_cost = 300
 free_delivery_threshold = 0
 discount_percent = 0
 root_entry = false
-shop_active = true"""
+shop_active = false"""
            
     with open(path, encoding='utf-8', mode='wt') as config_file:
         config_file.write(default_shops)
@@ -625,9 +643,7 @@ def getRowsText(prices_dict):
       else:
           ItemURL = prices_dict[item]['ItemURL']
           rows_text = rows_text + f'<tr><td><a href="{ItemURL}">{Name}</a></td>'
-
-          min_price = 10000000000000
-          min_prices_keys = []
+          min_price = 10000000000000          
 
           for price_key in prices_dict[item]['Prices']:
               try:
@@ -669,7 +685,7 @@ def export_result_file(shops_dict, prices_dict, export_filename):
     htm_result = htm_result.replace('%%%ROWS%%%', rows_text)
     with open(export_filename, encoding='utf-8', mode='wt') as result_file:
         result_file.write(htm_result)
-        print('Exported to: ' + result_file.name)
+        print('\nResults exported to: ' + '"' + result_file.name + '"')
     print()
 
 def appquit(message, dontpause = False):
@@ -686,22 +702,32 @@ def appquit(message, dontpause = False):
     else:
         sys.exit()
 
+def app_version():
+    return '1.0.0.0'
+
 def main():
   """
    Gathers all data, generates displays and writes export html-file with table   
-  """      
+  """   
+  print("""
+        ___
+     __(   )====::
+    /~~~~~~~~~\\
+    \O.O.O.O.O/
+Model Price Comparison """ + app_version() + '\n'
+  )
 
   parser = ArgumentParser(description='Fetches model kits price data from configured web-sources, displays and exports it.')
   parser.add_argument("-b", "--basket", dest="basket",
-                    help="name of basket file (will be created if not specified or created with specified name if doesn't exist)")
+                    help="Path to basket file with products to fetch data about. If not specified or do not exists - will be created with default content.")
   parser.add_argument("-s", "--shops", dest="shops",
-                    help="name of shops config file (will be created if not specified or created with specified name if doesn't exist)")
+                    help="Path to0 shops config file to fetch data from. If not specified or do not exists - will be created with default content.")
   parser.add_argument("-e", "--export", dest="exportfile",
-                    help="specify htm-file name to export result (will be created by default similar to basket config name)")
+                    help="Path to html-file to export result data. If not specified or do not exists - will be created with name similar to basket config file name.")
   parser.add_argument("-st", "--singlethread", action="store_true",
-                    help="data-fetching in single-threaded mode (instead of multi-threaded by default) - slow but less resource-hungry")
+                    help="Execute data-fetching in single-threaded mode instead of multi-threaded by default. Slow but less resource-hungry.")
   parser.add_argument("-dp", "--dontpause", action="store_true",
-                    help="dont pause and wait for input after execution")
+                    help="Don't pause and wait for input after execution.")
 
   args = parser.parse_args() 
   
@@ -712,11 +738,11 @@ def main():
   if args.shops != None:
     shops = args.shops  
   else:
-    print('Shops config file not specified, using default destination: ' + shops)  
+    print('Shops config file not specified, using default destination: ' + '"' + shops + '"')  
   if args.basket != None:
     basket = args.basket    
   else:
-    print('Basket config file not specified, using default destination: ' + basket)  
+    print('Basket config file not specified, using default destination: ' + '"' + basket + '"')  
   if args.exportfile != None:
     exportfilename = args.exportfile    
   
@@ -728,10 +754,10 @@ def main():
     
   try:
       if not os.path.exists(shops):
-          print('Can\'t find shops config file, creating default one in: ' + shops)      
+          print('Can\'t find shops config file, creating default one in: ' + '"' + shops + '"')      
           createShopsConfig(shops)
       else:
-          print('Found shops config file in: ' + shops)      
+          print('Found shops config file in: ' + '"' + shops + '"')      
   except:
       appquit('Error while creating shop config file in:' + shops, dontpause)      
 
@@ -743,10 +769,10 @@ def main():
 
   try:
       if not os.path.exists(basket):
-          print('Can\'t find basket config file, creating default one in: ' + basket)      
+          print('Can\'t find basket config file, creating default one in: ' + '"' + basket + '"')      
           createBasketConfig(basket)
       else:
-          print('Found basket config file in: ' + shops)      
+          print('Found basket config file in: ' + '"' + shops + '"')      
   except:
       appquit('Error while creating shop config file in:' + basket, dontpause)     
    
