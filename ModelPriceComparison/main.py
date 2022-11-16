@@ -721,7 +721,7 @@ Model Price Comparison """ + app_version() + '\n'
   parser.add_argument("-b", "--basket", dest="basket",
                     help="Path to basket file with products to fetch data about. If not specified or do not exists - will be created with default content.")
   parser.add_argument("-s", "--shops", dest="shops",
-                    help="Path to0 shops config file to fetch data from. If not specified or do not exists - will be created with default content.")
+                    help="Path to shops config file to fetch data from. If not specified or do not exists - will be created with default content.")
   parser.add_argument("-e", "--export", dest="exportfile",
                     help="Path to html-file to export result data. If not specified or do not exists - will be created with name similar to basket config file name.")
   parser.add_argument("-st", "--singlethread", action="store_true",
