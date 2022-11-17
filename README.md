@@ -1,13 +1,5 @@
 # ModelPriceComparison
-<<<<<<< HEAD
-<<<<<<< HEAD
 README 1.0.0.0
-=======
-MODEL PRICE COMPARISON README 1.0.0.0
->>>>>>> Update README.md
-=======
-README 1.0.0.0
->>>>>>> Update README.md
 ----------------------
 
 CONTENTS OF THIS FILE
@@ -52,11 +44,7 @@ App uses 2 config files listed above in Installation section. After launch app c
 basket config file and starts fetching data through shop-entries from shops config file.
 
 Data gathering goes in multithreaded (if not configured otherwise) mode and simultaneisly making requests to
-<<<<<<< HEAD
-configured web-sources. So be careful about activating anti-request spam protection which can be relevant for
-=======
 configured web-sources.So be careful about activating anti-requestspam protection which can be relevant for
->>>>>>> Update README.md
 some web-sites.
 
 After gathering data app displays results in a form of a table and saves to .html file (preferred)
@@ -69,7 +57,6 @@ Fetches model kits price data from configured web-sources, displays and exports 
 
 optional arguments:
   -h, --help            show this help message and exit
-<<<<<<< HEAD
   
   -b BASKET, --basket BASKET
                         Path to basket file with products to fetch data about. If not specified or do not exists -
@@ -86,17 +73,4 @@ optional arguments:
   -st, --singlethread   Execute data-fetching in single-threaded mode instead of multi-threaded by default. Slow but
                         less resource-hungry.
                         
-=======
-  -b BASKET, --basket BASKET
-                        Path to basket file with products to fetch data about. If not specified or do not exists -
-                        will be created with default content.
-  -s SHOPS, --shops SHOPS
-                        Path to shops config file to fetch data from. If not specified or do not exists - will be
-                        created with default content.
-  -e EXPORTFILE, --export EXPORTFILE
-                        Path to html-file to export result data. If not specified or do not exists - will be created
-                        with name similar to basket config file name.
-  -st, --singlethread   Execute data-fetching in single-threaded mode instead of multi-threaded by default. Slow but
-                        less resource-hungry.
->>>>>>> Update README.md
   -dp, --dontpause      Don't pause and wait for input after execution.
