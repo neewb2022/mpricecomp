@@ -57,15 +57,20 @@ Fetches model kits price data from configured web-sources, displays and exports 
 
 optional arguments:
   -h, --help            show this help message and exit
+  
   -b BASKET, --basket BASKET
                         Path to basket file with products to fetch data about. If not specified or do not exists -
                         will be created with default content.
+                        
   -s SHOPS, --shops SHOPS
                         Path to shops config file to fetch data from. If not specified or do not exists - will be
                         created with default content.
+                        
   -e EXPORTFILE, --export EXPORTFILE
                         Path to html-file to export result data. If not specified or do not exists - will be created
                         with name similar to basket config file name.
+                        
   -st, --singlethread   Execute data-fetching in single-threaded mode instead of multi-threaded by default. Slow but
                         less resource-hungry.
+                        
   -dp, --dontpause      Don't pause and wait for input after execution.
