@@ -13,7 +13,11 @@
     <RootNamespace>ModelPriceComparison</RootNamespace>
     <InterpreterId>MSBuild|env1|$(MSBuildProjectFullPath)</InterpreterId>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
+<<<<<<< HEAD
     <CommandLineArguments>-b tmp_basket.ini -s tmp_shops.ini -e exmp_export.htm</CommandLineArguments>
+=======
+    <CommandLineArguments>-b tmp_basket11.ini -s tmp_shops.ini -e exmp_export.htm</CommandLineArguments>
+>>>>>>> update
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
     <Environment>PYDEVD_WARN_SLOW_RESOLVE_TIMEOUT=2</Environment>
     <IsWindowsApplication>False</IsWindowsApplication>
