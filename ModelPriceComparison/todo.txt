@@ -1,4 +1,2 @@
-Add cookie support
-
-Add more sources
+Add option to additional check items on item pages if needed
 
