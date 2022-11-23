@@ -7,6 +7,7 @@ import urllib.parse
 import configparser
 import datetime
 import multiprocessing
+import http.cookiejar
 from argparse import ArgumentParser
 from bs4 import BeautifulSoup
 from multiprocessing import Pool
@@ -25,11 +26,12 @@ def InitItemDict(basket_item_line):
     
     return item_dict
 
-def getItemSearchString(shop_data, basket_item_line):
+def getItemSearchString(shop_data, shop_configentry_to_process, basket_item_line):
     """
     Get formatted item search string for remote web pages
     @params:
         shop_data          - Required  : element with shop config data (Dict element)        
+        shop_configentry_to_process - Required  : config entry to get prepared string from (Str)
         basket_item_line   - Required  : basket item line from config (Str)        
     """
     basket_item_line_list = basket_item_line.split('|')
@@ -38,7 +40,7 @@ def getItemSearchString(shop_data, basket_item_line):
         print('Wrong basket file format on line: ' + basket_item_line)
         basket_item_line_result = basket_item_line_result_def
     else:
-        if shop_data['search_string_template'] != '':
+        if shop_data[shop_configentry_to_process] != '':
             overrides_str = shop_data['search_string_overrides'].strip().lower()
             overrides_list = overrides_str.split('.')
             if len(overrides_list) == 3:
@@ -49,13 +51,20 @@ def getItemSearchString(shop_data, basket_item_line):
                         override_pair_list = override_pair.split('|')
                         basket_item_line_list[over_count] = basket_item_line_list[over_count].lower().replace(override_pair_list[0], override_pair_list[1])                
 
-            basket_item_line_result = shop_data['search_string_template'].replace('%%VENDOR%%', basket_item_line_list[0])
+            basket_item_line_result = shop_data[shop_configentry_to_process].replace('%%VENDOR%%', basket_item_line_list[0])
             basket_item_line_result = basket_item_line_result.replace('%%NUM%%', basket_item_line_list[1])
             basket_item_line_result = basket_item_line_result.replace('%%NAME%%', basket_item_line_list[2])
         else:
             basket_item_line_result = basket_item_line_result_def
 
     return basket_item_line_result
+
+def TrimString(str_to_trim):
+    str_result = str_to_trim.strip()
+    str_result = str_result.replace(' ','')
+    str_result = str_result.replace('\n','')
+    str_result = str_result.replace('\r','')
+    return str_result.lower()
 
 def getItemDict(basket_item_line, shops_dict):
     """
@@ -79,7 +88,7 @@ def getItemDict(basket_item_line, shops_dict):
             item_dict['URLs'][url_key] = ''
             price_counter = price_counter + 1
                 
-        search_string = getItemSearchString(shops_dict[shop], basket_item_line)
+        search_string = getItemSearchString(shops_dict[shop], 'search_string_template', basket_item_line)
 
         if shops_dict[shop]['search_url_encode'].strip() != '':
             search_string = search_string.encode(shops_dict[shop]['search_url_encode'].strip())
@@ -93,16 +102,58 @@ def getItemDict(basket_item_line, shops_dict):
                 item_dict['ItemURL'] = search_url
             else:
                 item_dict['URLs'][url_key] = search_url
-            search_result = urllib.request.urlopen(search_url).read()
+                        
+            headers={}
+            headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64)'                        
+            
+            if shops_dict[shop]['use_cookies'] == 'true':
+                cj = http.cookiejar.MozillaCookieJar()            
+                cookies_filename = shops_dict[shop]['cookies_path'].strip()
+                if cookies_filename != '':
+                    try:
+                        cj.load(cookies_filename)
+                    except:
+                        print('Error loading cookies from: "' + cookies_filename + '"')
+
+                opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
+                urllib.request.install_opener(opener)
+            
+            req = urllib.request.Request(search_url, headers=headers)                            
+            response = urllib.request.urlopen(req, timeout=20)
+            
+            search_result = response.read()
             soup = BeautifulSoup(search_result, "html.parser")
+
+            el_items = soup.select(shops_dict[shop]['search_item_template'])
             el_item = soup.select(shops_dict[shop]['search_item_template'])[0]
+
+            if shops_dict[shop]['search_item_check_template'] != '' and shops_dict[shop]['search_item_check_string'].strip() != '':
+                el_item = None
+                check_phrase = TrimString(getItemSearchString(shops_dict[shop], 'search_item_check_string', basket_item_line))
+                for sel_item in el_items:
+                    check_item = sel_item.select(shops_dict[shop]['search_item_check_template'])[0]
+                    check_item_text = TrimString(''.join(check_item.find_all(text=True, recursive=False)))                    
+                    
+                    if shops_dict[shop]['search_item_check_exact_match'] == 'true':
+                        if check_phrase == check_item_text:
+                            el_item = sel_item
+                            break           
+                    else:
+                        if check_item_text.find(check_phrase) != -1:
+                            el_item = sel_item
+                            break                              
+            if el_item == None:        
+                continue
 
             #Check if we've found wrong item
             if shops_dict[shop]['add_search_check'] == 'true':
                 el_item_text = ''.join(el_item.find_all(text=True, recursive=True)).strip().lower()
+                check_text = search_string
+                if shops_dict[shop]['add_search_check_template'].strip() != '':
+                    check_text = getItemSearchString(shops_dict[shop], 'add_search_check_template', basket_item_line)
                 item_text_cheched = True
                 
-                for check_basket_string in search_string.split(' '):
+                for check_basket_string in check_text.split(' '):
                     if el_item_text.find(check_basket_string.lower()) == -1:
                         item_text_cheched = False
                         break
@@ -111,7 +162,7 @@ def getItemDict(basket_item_line, shops_dict):
 
             if root_shop:                
                 item_url = shops_dict[shop]['url_template'] + el_item.find_all('a')[0].get('href')
-                item_result = urllib.request.urlopen(item_url).read().decode('utf-8')
+                item_result = urllib.request.urlopen(item_url,  timeout=20).read().decode('utf-8')
                 soup = BeautifulSoup(item_result, 'html.parser')
                 item_dict['ItemURL'] = item_url
                 item_dict['Name'] = str(soup.find('title').string)
@@ -119,7 +170,7 @@ def getItemDict(basket_item_line, shops_dict):
 
             if shops_dict[shop]['info_on_item_page'] == 'true':
                 item_url = shops_dict[shop]['url_template'] + el_item.find_all('a')[0].get('href')
-                item_result = urllib.request.urlopen(item_url).read().decode('utf-8')
+                item_result = urllib.request.urlopen(item_url,  timeout=20).read().decode('utf-8')
                 item_dict['URLs'][url_key] = item_url
                 el_item = BeautifulSoup(item_result, 'html.parser')
         
@@ -146,7 +197,7 @@ def getItemDict(basket_item_line, shops_dict):
 
         except Exception as e: 
             expt = e
-           #print(e)
+            #print(e)
     
     return item_dict        
         
@@ -170,6 +221,7 @@ def getPricesDict(basket_lines, shops_dict, singlethread):
             printProgressBar(items_counter,len(basket_lines))
             prices_dict['item' + str(items_counter)] = getItemDict(basket_item_line, shops_dict)
             items_counter = items_counter + 1         
+            printProgressBar(items_counter,len(basket_lines))
     else:    
         for basket_item_line in basket_lines:
             prices_async_dict['item' + str(items_counter)] = pool.apply_async(getItemDict, [basket_item_line, shops_dict])
@@ -179,8 +231,12 @@ def getPricesDict(basket_lines, shops_dict, singlethread):
 
         for basket_item_line in basket_lines:
             printProgressBar(items_counter,len(basket_lines))
-            prices_dict['item' + str(items_counter)] = prices_async_dict['item' + str(items_counter)].get(timeout=200)
+            try:
+                prices_dict['item' + str(items_counter)] = prices_async_dict['item' + str(items_counter)].get(timeout=100)
+            except:
+                e = True
             items_counter = items_counter + 1
+            printProgressBar(items_counter,len(basket_lines))
           
     
     prices_dict['SUM'] = {}
@@ -703,7 +759,7 @@ def appquit(message, dontpause = False):
         sys.exit()
 
 def app_version():
-    return '1.0.0.0'
+    return '1.0.0.1'
 
 def main():
   """
@@ -772,7 +828,7 @@ Model Price Comparison """ + app_version() + '\n'
           print('Can\'t find basket config file, creating default one in: ' + '"' + basket + '"')      
           createBasketConfig(basket)
       else:
-          print('Found basket config file in: ' + '"' + shops + '"')      
+          print('Found basket config file in: ' + '"' + basket + '"')      
   except:
       appquit('Error while creating shop config file in:' + basket, dontpause)     
    
