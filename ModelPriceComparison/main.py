@@ -710,6 +710,32 @@ discount_percent = 0
 root_entry = false
 shop_active = true
 
+[platcdarm]
+url_template = "https://www.platcdarm.ru"
+search_string_template = %%NUM%% %%VENDOR%%
+search_string_overrides = "Rye Field Model|RFM;HobbyBoss|Hobby Boss.RM-|."
+search_url_encode = ""
+search_url_template = "/tovar/?q=%%%SEARCH_STRING%%%"
+search_item_template = ".catalog div[class='product']"
+search_item_check_template = ""
+search_item_check_string = ""
+search_item_check_exact_match = true
+search_price_template = "div .price"
+search_instock_template = "div[class='product_submit']"
+use_cookies = false
+cookies_path = ""
+info_on_item_page = false
+search_itempage_template = ""
+add_search_check = false
+add_search_check_template = ""
+delivery_template_on_item_page = ""
+delivery_template_on_item_page_elnum = 
+delivery_cost = 200
+free_delivery_threshold = 3000
+discount_percent = 0
+root_entry = false
+shop_active = true
+
 [Arma-models]
 url_template = "https://arma-models.ru"
 search_string_template = %%VENDOR%% %%NUM%%
@@ -733,7 +759,7 @@ delivery_template_on_item_page = ""
 delivery_template_on_item_page_elnum = 
 delivery_cost = 0
 free_delivery_threshold = 0
-discount_percent = 0
+discount_percent = 20
 root_entry = false
 shop_active = true
 
