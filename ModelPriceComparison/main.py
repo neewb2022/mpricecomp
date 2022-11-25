@@ -12,6 +12,19 @@ from argparse import ArgumentParser
 from bs4 import BeautifulSoup
 from multiprocessing import Pool
 
+def urlEncodeNonAscii(b):
+    return re.sub('[\x80-\xFF]', lambda c: '%%%02x' % ord(c.group(0)), b)
+
+def iriToUri(iri):
+    iri = urllib.parse.urlsplit(iri)
+    iri = list(iri)
+    iri[2] = urllib.parse.quote(iri[2])
+    iri = urllib.parse.urlunsplit(iri)
+    return iri
+
+def url_is_absolute(url):
+    return bool(urllib.parse.urlparse(url).netloc)
+
 def InitItemDict(basket_item_line):
     """
     Initialize default Item dict
@@ -124,13 +137,60 @@ def getItemDict(basket_item_line, shops_dict):
             search_result = response.read()
             soup = BeautifulSoup(search_result, "html.parser")
 
-            el_items = soup.select(shops_dict[shop]['search_item_template'])
-            el_item = soup.select(shops_dict[shop]['search_item_template'])[0]
-
+            search_item_check = False
             if shops_dict[shop]['search_item_check_template'] != '' and shops_dict[shop]['search_item_check_string'].strip() != '':
+                search_item_check = True
+                
+            if shops_dict[shop]['info_on_item_page'] == 'true' and shops_dict[shop]['search_itempage_template'] != '':
+                el_items = []
+                el_items_process = soup.select(shops_dict[shop]['search_item_template'])
+                max_items_to_process = 3
+                items_processed = 0
+                for el_item_it in el_items_process:
+                    item_url = el_item_it.find_all('a')[0].get('href')
+                    if not url_is_absolute(item_url):
+                        item_url = shops_dict[shop]['url_template'] + el_item_it.find_all('a')[0].get('href')                    
+                    item_result = urllib.request.urlopen(iriToUri(item_url), timeout=20).read().decode('utf-8')                                        
+                    soup_tmp = BeautifulSoup(item_result, 'html.parser')
+                    el_items.append(soup_tmp.select(shops_dict[shop]['search_itempage_template'])[0])
+                    if not search_item_check:
+                        break
+                    items_processed = items_processed + 1
+                    if items_processed == max_items_to_process:
+                        break
+            else:
+                el_items = soup.select(shops_dict[shop]['search_item_template'])
+                        
+            el_item = el_items[0]
+            el_items_filtered = []
+
+            if shops_dict[shop]['add_search_check'] == 'true':
+                
+                for sel_item in el_items:
+                    el_item_text = ''.join(sel_item.find_all(text=True, recursive=True)).strip().lower()
+                    check_text = search_string
+                    if shops_dict[shop]['add_search_check_template'].strip() != '':
+                        check_text = getItemSearchString(shops_dict[shop], 'add_search_check_template', basket_item_line)
+                    item_text_cheched = True
+                
+                    for check_basket_string in check_text.split(' '):
+                        if el_item_text.find(check_basket_string.lower()) == -1:
+                            item_text_cheched = False
+                            break
+                    if item_text_cheched == False:
+                        continue            
+                    else:
+                        el_items_filtered.append(sel_item)
+
+                el_item = el_items_filtered[0]
+
+            else:
+                el_items_filtered = el_items            
+
+            if search_item_check:
                 el_item = None
                 check_phrase = TrimString(getItemSearchString(shops_dict[shop], 'search_item_check_string', basket_item_line))
-                for sel_item in el_items:
+                for sel_item in el_items_filtered:
                     check_item = sel_item.select(shops_dict[shop]['search_item_check_template'])[0]
                     check_item_text = TrimString(''.join(check_item.find_all(text=True, recursive=False)))                    
                     
@@ -143,22 +203,7 @@ def getItemDict(basket_item_line, shops_dict):
                             el_item = sel_item
                             break                              
             if el_item == None:        
-                continue
-
-            #Check if we've found wrong item
-            if shops_dict[shop]['add_search_check'] == 'true':
-                el_item_text = ''.join(el_item.find_all(text=True, recursive=True)).strip().lower()
-                check_text = search_string
-                if shops_dict[shop]['add_search_check_template'].strip() != '':
-                    check_text = getItemSearchString(shops_dict[shop], 'add_search_check_template', basket_item_line)
-                item_text_cheched = True
-                
-                for check_basket_string in check_text.split(' '):
-                    if el_item_text.find(check_basket_string.lower()) == -1:
-                        item_text_cheched = False
-                        break
-                if item_text_cheched == False:
-                    continue            
+                continue            
 
             if root_shop:                
                 item_url = shops_dict[shop]['url_template'] + el_item.find_all('a')[0].get('href')
@@ -167,12 +212,6 @@ def getItemDict(basket_item_line, shops_dict):
                 item_dict['ItemURL'] = item_url
                 item_dict['Name'] = str(soup.find('title').string)
                 continue
-
-            if shops_dict[shop]['info_on_item_page'] == 'true':
-                item_url = shops_dict[shop]['url_template'] + el_item.find_all('a')[0].get('href')
-                item_result = urllib.request.urlopen(item_url,  timeout=20).read().decode('utf-8')
-                item_dict['URLs'][url_key] = item_url
-                el_item = BeautifulSoup(item_result, 'html.parser')
         
             if shops_dict[shop]['search_instock_template'] != '' and len(el_item.select(shops_dict[shop]['search_instock_template'])) == 0:
                 item_dict['Prices'][price_key] = 'OOS'
@@ -838,7 +877,7 @@ Model Price Comparison """ + app_version() + '\n'
       appquit('Error accessing basket config file in:' + basket, dontpause)     
   
   with basketfile as file:
-      basket_lines = [line.rstrip() for line in file if line.rstrip()[0] != '#']
+      basket_lines = [line.rstrip() for line in file if line.rstrip()[0] != ';']
 
   shops_dict = getShopsDict(config_shops)  
   prices_dict = getPricesDict(basket_lines, shops_dict, singlethread)

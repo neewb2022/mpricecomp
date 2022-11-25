@@ -1,0 +1,13 @@
+# Netscape HTTP Cookie File
+# http://curl.haxx.se/rfc/cookie_spec.html
+# This is a generated file!  Do not edit.
+
+model-lavka.ru	FALSE	/	FALSE	1938702563	roistat_first_visit	974237
+model-lavka.ru	FALSE	/	FALSE	1944253922	___dc	ca4fb5f0-579f-4223-9ced-f6e34f53d37c
+model-lavka.ru	FALSE	/	FALSE	1720722169	uid	b55df3dbd76324ecae6c98bd25695550f3628a86955096b35f7c109f176a5b74a%3A2%3A%7Bi%3A0%3Bs%3A3%3A%22uid%22%3Bi%3A1%3Bs%3A16%3A%22yEl98_1626114170%22%3B%7D
+.model-lavka.ru	TRUE	/	FALSE	1700433884	_identity	a339466cff4b51fe180d242b0dd6d625387c441de0af13353260b9250c1bc109a%3A2%3A%7Bi%3A0%3Bs%3A9%3A%22_identity%22%3Bi%3A1%3Bs%3A51%3A%22%5B24026%2C%22oUSWy-Zlj8O_O2SdeomQ8q0QBJD4SfOO%22%2C31536000%5D%22%3B%7D
+.model-lavka.ru	TRUE	/	TRUE	253402300799	mgo_uid	feGegwy3CxiXbt40O2tl
+model-lavka.ru	FALSE	/	FALSE	1671489885	UserID	24026
+model-lavka.ru	FALSE	/	FALSE	0	PHPSESSID	glqd621vi6mhojueva339bm9jn
+model-lavka.ru	FALSE	/	FALSE	0	_csrf	90f28aaaa12a5b7b993ece70d08c58bb3e8f1ce358f78c2b8a0bbc0c2c4ee24ca%3A2%3A%7Bi%3A0%3Bs%3A5%3A%22_csrf%22%3Bi%3A1%3Bs%3A32%3A%22hcK8qCBIy7Roi7yYf-nBg74Pv7ERHbqB%22%3B%7D
+model-lavka.ru	FALSE	/	FALSE	1703457887	rulr	c72ef9d4df94e7b22988f8904bfd5e15022ff7c29c6cb28766d5ea097ed4e667a%3A2%3A%7Bi%3A0%3Bs%3A4%3A%22rulr%22%3Bi%3A1%3Bs%3A151%3A%22https%3A%2F%2Fmodel-lavka.ru%2Fcatalog%3Fquery%3D%25D0%25B7%25D0%25B2%25D0%25B5%25D0%25B7%25D0%25B4%25D0%25B0%25203657%26_csrf%3D%26name%3D%26priceFrom%3D%26priceTo%3D%26availability%3D%26availability%3Dall%26scale%3D%22%3B%7D
