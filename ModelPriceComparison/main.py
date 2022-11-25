@@ -471,10 +471,14 @@ search_price_template = "div[class='snow-price_SnowPrice__mainS__18x8np']"
 search_instock_template = ""
 # Use site cookies
 <<<<<<< HEAD
+<<<<<<< HEAD
 use_cookies = false
 =======
 use_cookies = true
 >>>>>>> update
+=======
+use_cookies = false
+>>>>>>> 1.0.0.1
 # Path to load site cookies from, must be in netscape format (for example may be generated manually with 'get cookies.txt' extension for chrome-based browsers)
 cookies_path = "ali_cookies.txt"
 # Needed for some shops if full desired info only situated on item page
@@ -513,10 +517,14 @@ search_item_check_exact_match = false
 search_price_template = "span[data-auto='mainPrice'] span"
 search_instock_template = "span[class='_1CSaT _2mcnk']"
 <<<<<<< HEAD
+<<<<<<< HEAD
 use_cookies = false
 =======
 use_cookies = true
 >>>>>>> update
+=======
+use_cookies = false
+>>>>>>> 1.0.0.1
 cookies_path = "yandex_cookies.txt"
 info_on_item_page = false
 search_itempage_template = ""
@@ -569,10 +577,14 @@ search_item_check_exact_match = true
 search_price_template = ".RE"
 search_instock_template = ""
 <<<<<<< HEAD
+<<<<<<< HEAD
 use_cookies = false
 =======
 use_cookies = true
 >>>>>>> update
+=======
+use_cookies = false
+>>>>>>> 1.0.0.1
 cookies_path = "detmir_cookies.txt"
 info_on_item_page = true
 search_itempage_template = "div[class='a']"
@@ -599,10 +611,14 @@ search_item_check_exact_match = true
 search_price_template = "div[class='price']"
 search_instock_template = "div[class='shiping__wrap']"
 <<<<<<< HEAD
+<<<<<<< HEAD
 use_cookies = false
 =======
 use_cookies = true
 >>>>>>> update
+=======
+use_cookies = false
+>>>>>>> 1.0.0.1
 cookies_path = "model-lavka_cookies.txt"
 info_on_item_page = false
 search_itempage_template = ""
