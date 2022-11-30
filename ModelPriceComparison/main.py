@@ -8,6 +8,8 @@ import configparser
 import datetime
 import multiprocessing
 import http.cookiejar
+import time
+from decimal import Decimal
 from argparse import ArgumentParser
 from bs4 import BeautifulSoup
 from multiprocessing import Pool
@@ -133,29 +135,10 @@ def getItemDict(basket_item_line, shops_dict):
             
             req = urllib.request.Request(search_url, headers=headers)                            
             response = urllib.request.urlopen(req, timeout=20)
-            
-            search_result = response.read()
-            soup = BeautifulSoup(search_result, "html.parser")
-<<<<<<< HEAD
-
-            search_item_check = False
-            if shops_dict[shop]['search_item_check_template'] != '' and shops_dict[shop]['search_item_check_string'].strip() != '':
-                search_item_check = True
-                
-            if shops_dict[shop]['info_on_item_page'] == 'true' and shops_dict[shop]['search_itempage_template'] != '':
-                el_items = []
-                el_items_process = soup.select(shops_dict[shop]['search_item_template'])
-                max_items_to_process = 3
-                items_processed = 0
-                for el_item_it in el_items_process:
-                    item_url = el_item_it.find_all('a')[0].get('href')
-                    if not url_is_absolute(item_url):
-                        item_url = shops_dict[shop]['url_template'] + el_item_it.find_all('a')[0].get('href')                    
-                    item_result = urllib.request.urlopen(iriToUri(item_url), timeout=20).read().decode('utf-8')                                        
-                    soup_tmp = BeautifulSoup(item_result, 'html.parser')
-                    el_items.append(soup_tmp.select(shops_dict[shop]['search_itempage_template'])[0])
-                    if not search_item_check:
-=======
+            #time.sleep(10)
+            search_result = response.read()                 
+                        
+            soup = BeautifulSoup(search_result, "html.parser")            
 
             search_item_check = False
             if shops_dict[shop]['search_item_check_template'] != '' and shops_dict[shop]['search_item_check_string'].strip() != '':
@@ -223,72 +206,6 @@ def getItemDict(basket_item_line, shops_dict):
                             el_item = sel_item
                             break                              
             if el_item == None:        
-<<<<<<< HEAD
-                continue
-
-            #Check if we've found wrong item
-            if shops_dict[shop]['add_search_check'] == 'true':
-                el_item_text = ''.join(el_item.find_all(text=True, recursive=True)).strip().lower()
-                check_text = search_string
-                if shops_dict[shop]['add_search_check_template'].strip() != '':
-                    check_text = getItemSearchString(shops_dict[shop], 'add_search_check_template', basket_item_line)
-                item_text_cheched = True
-                
-                for check_basket_string in check_text.split(' '):
-                    if el_item_text.find(check_basket_string.lower()) == -1:
-                        item_text_cheched = False
->>>>>>> update
-                        break
-                    items_processed = items_processed + 1
-                    if items_processed == max_items_to_process:
-                        break
-            else:
-                el_items = soup.select(shops_dict[shop]['search_item_template'])
-                        
-            el_item = el_items[0]
-            el_items_filtered = []
-
-            if shops_dict[shop]['add_search_check'] == 'true':
-                
-                for sel_item in el_items:
-                    el_item_text = ''.join(sel_item.find_all(text=True, recursive=True)).strip().lower()
-                    check_text = search_string
-                    if shops_dict[shop]['add_search_check_template'].strip() != '':
-                        check_text = getItemSearchString(shops_dict[shop], 'add_search_check_template', basket_item_line)
-                    item_text_cheched = True
-                
-                    for check_basket_string in check_text.split(' '):
-                        if el_item_text.find(check_basket_string.lower()) == -1:
-                            item_text_cheched = False
-                            break
-                    if item_text_cheched == False:
-                        continue            
-                    else:
-                        el_items_filtered.append(sel_item)
-
-                el_item = el_items_filtered[0]
-
-            else:
-                el_items_filtered = el_items            
-
-            if search_item_check:
-                el_item = None
-                check_phrase = TrimString(getItemSearchString(shops_dict[shop], 'search_item_check_string', basket_item_line))
-                for sel_item in el_items_filtered:
-                    check_item = sel_item.select(shops_dict[shop]['search_item_check_template'])[0]
-                    check_item_text = TrimString(''.join(check_item.find_all(text=True, recursive=False)))                    
-                    
-                    if shops_dict[shop]['search_item_check_exact_match'] == 'true':
-                        if check_phrase == check_item_text:
-                            el_item = sel_item
-                            break           
-                    else:
-                        if check_item_text.find(check_phrase) != -1:
-                            el_item = sel_item
-                            break                              
-            if el_item == None:        
-=======
->>>>>>> update
                 continue            
 
             if root_shop:                
@@ -298,22 +215,16 @@ def getItemDict(basket_item_line, shops_dict):
                 item_dict['ItemURL'] = item_url
                 item_dict['Name'] = str(soup.find('title').string)
                 continue
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-
-            if shops_dict[shop]['info_on_item_page'] == 'true':
-                item_url = shops_dict[shop]['url_template'] + el_item.find_all('a')[0].get('href')
-                item_result = urllib.request.urlopen(item_url,  timeout=20).read().decode('utf-8')
-                item_dict['URLs'][url_key] = item_url
-                el_item = BeautifulSoup(item_result, 'html.parser')
->>>>>>> update
-=======
->>>>>>> update
         
-            if shops_dict[shop]['search_instock_template'] != '' and len(el_item.select(shops_dict[shop]['search_instock_template'])) == 0:
-                item_dict['Prices'][price_key] = 'OOS'
-                continue
+            if shops_dict[shop]['search_instock_template'] != '':
+                if len(el_item.select(shops_dict[shop]['search_instock_template'])) == 0:
+                    if not shops_dict[shop]['search_instock_template_reverseuse'] == 'true':
+                        item_dict['Prices'][price_key] = 'OOS'
+                        continue
+                else:
+                    if shops_dict[shop]['search_instock_template_reverseuse'] == 'true':
+                        item_dict['Prices'][price_key] = 'OOS'
+                        continue
 
             el_price = el_item.select(shops_dict[shop]['search_price_template'])
             price_text = ''.join(el_price[0].find_all(text=True, recursive=False)).strip() 
@@ -322,12 +233,12 @@ def getItemDict(basket_item_line, shops_dict):
                 item_dict['Prices'][price_key] = 'OOS'
                 continue
 
-            price = float(re.sub("[^0-9,]", "", price_text).replace(',','.'))
+            price = StrToFloat(price_text)            
 
             if shops_dict[shop]['delivery_template_on_item_page'] != '':
                 el_price_delivery = el_item.select(shops_dict[shop]['delivery_template_on_item_page'])
                 price_delivery_text = el_price_delivery[int(shops_dict[shop]['delivery_template_on_item_page_elnum'])].text
-                price_delivery = float(re.sub("[^0-9,]", "", price_delivery_text.strip()).replace(',','.'))
+                price_delivery = StrToFloat(price_delivery_text.strip())
                 price = round(price + price_delivery, 2)               
 
             item_dict['Prices'][price_key] = price
@@ -336,7 +247,12 @@ def getItemDict(basket_item_line, shops_dict):
             expt = e
             #print(e)
     
-    return item_dict        
+    return item_dict     
+
+def StrToFloat(text_string):
+    if not text_string[-1].isnumeric():
+        text_string = text_string[:-1]
+    return float(re.sub(r'[^(\d,.)]', '', text_string).replace(",", "."))
         
 def getPricesDict(basket_lines, shops_dict, singlethread):
     """
@@ -470,15 +386,7 @@ search_price_template = "div[class='snow-price_SnowPrice__mainS__18x8np']"
 # (optional) Template to find price code block for determining item availability
 search_instock_template = ""
 # Use site cookies
-<<<<<<< HEAD
-<<<<<<< HEAD
 use_cookies = false
-=======
-use_cookies = true
->>>>>>> update
-=======
-use_cookies = false
->>>>>>> 1.0.0.1
 # Path to load site cookies from, must be in netscape format (for example may be generated manually with 'get cookies.txt' extension for chrome-based browsers)
 cookies_path = "ali_cookies.txt"
 # Needed for some shops if full desired info only situated on item page
@@ -516,15 +424,7 @@ search_item_check_string = ""
 search_item_check_exact_match = false
 search_price_template = "span[data-auto='mainPrice'] span"
 search_instock_template = "span[class='_1CSaT _2mcnk']"
-<<<<<<< HEAD
-<<<<<<< HEAD
 use_cookies = false
-=======
-use_cookies = true
->>>>>>> update
-=======
-use_cookies = false
->>>>>>> 1.0.0.1
 cookies_path = "yandex_cookies.txt"
 info_on_item_page = false
 search_itempage_template = ""
@@ -576,15 +476,7 @@ search_item_check_string = "%%NUM%%"
 search_item_check_exact_match = true
 search_price_template = ".RE"
 search_instock_template = ""
-<<<<<<< HEAD
-<<<<<<< HEAD
 use_cookies = false
-=======
-use_cookies = true
->>>>>>> update
-=======
-use_cookies = false
->>>>>>> 1.0.0.1
 cookies_path = "detmir_cookies.txt"
 info_on_item_page = true
 search_itempage_template = "div[class='a']"
@@ -610,15 +502,7 @@ search_item_check_string = " Артикул: %%NUM%% "
 search_item_check_exact_match = true
 search_price_template = "div[class='price']"
 search_instock_template = "div[class='shiping__wrap']"
-<<<<<<< HEAD
-<<<<<<< HEAD
 use_cookies = false
-=======
-use_cookies = true
->>>>>>> update
-=======
-use_cookies = false
->>>>>>> 1.0.0.1
 cookies_path = "model-lavka_cookies.txt"
 info_on_item_page = false
 search_itempage_template = ""
@@ -1195,7 +1079,7 @@ def appquit(message, dontpause = False):
         sys.exit()
 
 def app_version():
-    return '1.0.0.1'
+    return '1.0.0.2'
 
 def main():
   """

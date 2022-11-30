@@ -1,4 +1,4 @@
-MODEL PRICE COMPARISON README 1.0.0.2
+MODEL PRICE COMPARISON README 1.0.0.1
 ----------------------
 
 CONTENTS OF THIS FILE
@@ -43,7 +43,7 @@ App uses 2 config files listed above in Installation section. After launch app c
 basket config file and starts fetching data through shop-entries from shops config file.
 
 Data gathering goes in multithreaded (if not configured otherwise) mode and simultaneisly making requests to
-configured web-sources.So be careful about activating anti-requestspam protection which can be relevant for
+configured web-sources. So be careful about activating anti-request spam protection which can be relevant for
 some web-sites.
 
 After gathering data app displays results in a form of a table and saves to .html file (preferred)
