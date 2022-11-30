@@ -8,6 +8,8 @@ import configparser
 import datetime
 import multiprocessing
 import http.cookiejar
+import time
+from decimal import Decimal
 from argparse import ArgumentParser
 from bs4 import BeautifulSoup
 from multiprocessing import Pool
@@ -133,9 +135,10 @@ def getItemDict(basket_item_line, shops_dict):
             
             req = urllib.request.Request(search_url, headers=headers)                            
             response = urllib.request.urlopen(req, timeout=20)
-            
-            search_result = response.read()
-            soup = BeautifulSoup(search_result, "html.parser")
+            #time.sleep(10)
+            search_result = response.read()                 
+                        
+            soup = BeautifulSoup(search_result, "html.parser")            
 
             search_item_check = False
             if shops_dict[shop]['search_item_check_template'] != '' and shops_dict[shop]['search_item_check_string'].strip() != '':
@@ -213,9 +216,15 @@ def getItemDict(basket_item_line, shops_dict):
                 item_dict['Name'] = str(soup.find('title').string)
                 continue
         
-            if shops_dict[shop]['search_instock_template'] != '' and len(el_item.select(shops_dict[shop]['search_instock_template'])) == 0:
-                item_dict['Prices'][price_key] = 'OOS'
-                continue
+            if shops_dict[shop]['search_instock_template'] != '':
+                if len(el_item.select(shops_dict[shop]['search_instock_template'])) == 0:
+                    if not shops_dict[shop]['search_instock_template_reverseuse'] == 'true':
+                        item_dict['Prices'][price_key] = 'OOS'
+                        continue
+                else:
+                    if shops_dict[shop]['search_instock_template_reverseuse'] == 'true':
+                        item_dict['Prices'][price_key] = 'OOS'
+                        continue
 
             el_price = el_item.select(shops_dict[shop]['search_price_template'])
             price_text = ''.join(el_price[0].find_all(text=True, recursive=False)).strip() 
@@ -224,12 +233,12 @@ def getItemDict(basket_item_line, shops_dict):
                 item_dict['Prices'][price_key] = 'OOS'
                 continue
 
-            price = float(re.sub("[^0-9,]", "", price_text).replace(',','.'))
+            price = StrToFloat(price_text)            
 
             if shops_dict[shop]['delivery_template_on_item_page'] != '':
                 el_price_delivery = el_item.select(shops_dict[shop]['delivery_template_on_item_page'])
                 price_delivery_text = el_price_delivery[int(shops_dict[shop]['delivery_template_on_item_page_elnum'])].text
-                price_delivery = float(re.sub("[^0-9,]", "", price_delivery_text.strip()).replace(',','.'))
+                price_delivery = StrToFloat(price_delivery_text.strip())
                 price = round(price + price_delivery, 2)               
 
             item_dict['Prices'][price_key] = price
@@ -238,7 +247,12 @@ def getItemDict(basket_item_line, shops_dict):
             expt = e
             #print(e)
     
-    return item_dict        
+    return item_dict     
+
+def StrToFloat(text_string):
+    if not text_string[-1].isnumeric():
+        text_string = text_string[:-1]
+    return float(re.sub(r'[^(\d,.)]', '', text_string).replace(",", "."))
         
 def getPricesDict(basket_lines, shops_dict, singlethread):
     """
@@ -1065,7 +1079,7 @@ def appquit(message, dontpause = False):
         sys.exit()
 
 def app_version():
-    return '1.0.0.1'
+    return '1.0.0.2'
 
 def main():
   """
