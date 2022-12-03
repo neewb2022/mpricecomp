@@ -8,7 +8,6 @@ import configparser
 import datetime
 import multiprocessing
 import http.cookiejar
-import time
 from decimal import Decimal
 from argparse import ArgumentParser
 from bs4 import BeautifulSoup
@@ -346,7 +345,7 @@ def createShopsConfig(path):
     default_shops = """[Scalemates]
 url_template = "https://www.scalemates.com"
 search_string_template = "%%VENDOR%% "%%NUM%%"'"
-search_string_overrides = "Freedom Model Kits|Hero Hobby Kits;Hobby Boss|HobbyBoss;Rye Field Models|Rye Field Model.."
+search_string_overrides = "Freedom Model Kits|Hero Hobby Kits;Hobby Boss|HobbyBoss;Rye Field Models|Rye Field Model.PH-|PH."
 search_url_encode = ""
 search_url_template = "/search.php?fkSECTION[]=Kits&q=%%%SEARCH_STRING%%%&fkTYPENAME[]=%22Full%20kits%22"
 search_item_template = "div[class='ar p5']"
@@ -367,14 +366,14 @@ url_template = "https://aliexpress.ru"
 # with corresponding values from basket config file.
 search_string_template = %%VENDOR%% %%NUM%%
 # Template for remote web-source search URL, keyword %%%SEARCH_STRING%%% will be replaced with value formed from 'search_string_template'
-search_url_template = "/wholesale?SearchText=%%%SEARCH_STRING%%%&SortType=total_tranpro_desc"
+search_url_template = "/wholesale?SearchText=%%%SEARCH_STRING%%%&SortType=default"
 # Web-source specific search overrides for better search results. '.' separates groups: Vendor, Num, Name. ';' separates replacement pairs in each group.
 # "|" separates value to replace and replacement value in each pair.
 search_string_overrides = "Rye Field Model|RFM;Звезда|Zvezda.ss-014|ss014."
 # (optional) Force to encode search string for search URL in specific codepage. Rarely needed
 search_url_encode = ""
 # Template to find code block of desired item/items in web-page
-search_item_template = "div[class='product-snippet_ProductSnippet__content__1ettdy']"
+search_item_template = "div[class='product-snippet_ProductSnippet__content__lido9p']"
 # (optional) Template to find block to check if item is correct (not same string in name etc.) like unique item num, sku or so, for better search results, works only with 'search_item_check_template'
 search_item_check_template = ""
 # (optional) Search string template to check if item is correct, keywords processed same as for 'search_string_template', works only with 'search_item_check_template'
@@ -383,8 +382,10 @@ search_item_check_string = ""
 search_item_check_exact_match = false
 # Template to find price code block of desired item/items in web-page
 search_price_template = "div[class='snow-price_SnowPrice__mainS__18x8np']" 
-# (optional) Template to find price code block for determining item availability
+# (optional) Template to find code block for determining item availability
 search_instock_template = ""
+# If block is found from 'search_instock_template' - mark as not available, by default - skip
+search_instock_template_reverseuse = false
 # Use site cookies
 use_cookies = false
 # Path to load site cookies from, must be in netscape format (for example may be generated manually with 'get cookies.txt' extension for chrome-based browsers)
@@ -394,9 +395,9 @@ info_on_item_page = true
 # Template to find block to extract data on item page, works only with 'info_on_item_page = true'
 search_itempage_template = "body"
 # Needed for some shops to check if search result corresponds to search string
-add_search_check = false
+add_search_check = true
 # (optional) Check string template similar as for 'search_string_template' if needed, if not filled - equals to 'search_string_template'
-add_search_check_template = ""
+add_search_check_template = "%%VENDOR%% %%NUM%%"
 # (optional) Needed for some shops (ali for example) to find block with delivery price on item page
 delivery_template_on_item_page = "span[class='snow-ali-kit_Typography__base__1shggo snow-ali-kit_Typography__base__1shggo snow-ali-kit_Typography__sizeTextM__1shggo']"
 # Needed for some shops (ali for example) to find block with delivery price on item page
@@ -424,6 +425,7 @@ search_item_check_string = ""
 search_item_check_exact_match = false
 search_price_template = "span[data-auto='mainPrice'] span"
 search_instock_template = "span[class='_1CSaT _2mcnk']"
+search_instock_template_reverseuse = false
 use_cookies = false
 cookies_path = "yandex_cookies.txt"
 info_on_item_page = false
@@ -450,8 +452,9 @@ search_item_check_string = ""
 search_item_check_exact_match = false
 search_price_template = "p[class='price-new']"
 search_instock_template = ""
+search_instock_template_reverseuse = false
 use_cookies = false
-cookies_path = ""
+cookies_path = "leonardo_cookies.txt"
 info_on_item_page = false
 search_itempage_template = ""
 add_search_check = true
@@ -470,12 +473,13 @@ search_string_template = %%VENDOR%% %%NUM%%
 search_url_template = "/search/results/?qt=%%%SEARCH_STRING%%%"
 search_string_overrides = ""
 search_url_encode = ""
-search_item_template = "div[class='xH xL xK']"
-search_item_check_template = "td[class='r_7']"
+search_item_template = "div[class='pL pP BQ']"
+search_item_check_template = "td[class='Al']"
 search_item_check_string = "%%NUM%%"
 search_item_check_exact_match = true
-search_price_template = ".RE"
+search_price_template = ".V_"
 search_instock_template = ""
+search_instock_template_reverseuse = false
 use_cookies = false
 cookies_path = "detmir_cookies.txt"
 info_on_item_page = true
@@ -490,6 +494,33 @@ discount_percent = 0
 root_entry = false
 shop_active = true
 
+[rctoday]
+url_template = "https://rc-today.ru"
+search_string_template = %%VENDOR%% %%NUM%%
+search_url_template = "/search/?words=%%%SEARCH_STRING%%%"
+search_string_overrides = "Звезда|Zvezda.."
+search_url_encode = ""
+search_item_template = "div[class='product-card panel_l']"
+search_item_check_template = ""
+search_item_check_string = ""
+search_item_check_exact_match = false
+search_price_template = "div[class='product_item__buttons text--left'] span"
+search_instock_template = ""
+search_instock_template_reverseuse = false
+use_cookies = false
+cookies_path = ""
+info_on_item_page = false
+search_itempage_template = ""
+add_search_check = true
+add_search_check_template = "%%VENDOR%% %%NUM%%"
+delivery_template_on_item_page = ""
+delivery_template_on_item_page_elnum = 
+delivery_cost = 300
+free_delivery_threshold = 0
+discount_percent = 0
+root_entry = false
+shop_active = true
+
 [Model-lavka]
 url_template = "https://model-lavka.ru"
 search_string_template = %%VENDOR%% %%NUM%%
@@ -498,10 +529,11 @@ search_string_overrides = "USTAR|Takom;HobbyBoss|Hobby Boss.."
 search_url_encode = ""
 search_item_template = ".item__wrap div[class='item__bottom']"
 search_item_check_template = "div[class='article__wrap']"
-search_item_check_string = " Артикул: %%NUM%% "
+search_item_check_string = "Артикул: %%NUM%%"
 search_item_check_exact_match = true
 search_price_template = "div[class='price']"
 search_instock_template = "div[class='shiping__wrap']"
+search_instock_template_reverseuse = false
 use_cookies = false
 cookies_path = "model-lavka_cookies.txt"
 info_on_item_page = false
@@ -528,6 +560,7 @@ search_item_check_string = " Производитель: %%VENDOR%% "
 search_item_check_exact_match = true
 search_price_template = "span[class='main_price']"
 search_instock_template = "span[class='main_price']"
+search_instock_template_reverseuse = false
 use_cookies = false
 cookies_path = ""
 info_on_item_page = false
@@ -554,6 +587,7 @@ search_item_check_string = " Производитель: %%VENDOR%% "
 search_item_check_exact_match = true
 search_price_template = "span[class='main_price']"
 search_instock_template = "span[class='main_price']"
+search_instock_template_reverseuse = false
 use_cookies = false
 cookies_path = ""
 info_on_item_page = false
@@ -580,6 +614,7 @@ search_item_check_string = " Производитель: %%VENDOR%% "
 search_item_check_exact_match = true
 search_price_template = "span[class='main_price']"
 search_instock_template = "span[class='main_price']"
+search_instock_template_reverseuse = false
 use_cookies = false
 cookies_path = ""
 info_on_item_page = false
@@ -606,6 +641,7 @@ search_item_check_string = " Производитель: %%VENDOR%% "
 search_item_check_exact_match = true
 search_price_template = "span[class='main_price']"
 search_instock_template = "span[class='main_price']"
+search_instock_template_reverseuse = false
 use_cookies = false
 cookies_path = ""
 info_on_item_page = false
@@ -632,6 +668,7 @@ search_item_check_string = " Артикул: %%NUM%% "
 search_item_check_exact_match = true
 search_price_template = ".prod-item__price span[data-thousand-separate='']"
 search_instock_template = "i[class='icon icon_cart text-white txt_12px mr-2']"
+search_instock_template_reverseuse = false
 use_cookies = false
 cookies_path = ""
 info_on_item_page = false
@@ -658,6 +695,7 @@ search_item_check_string = ""
 search_item_check_exact_match = true
 search_price_template = "div .price"
 search_instock_template = "div[class='product_submit']"
+search_instock_template_reverseuse = false
 use_cookies = false
 cookies_path = ""
 info_on_item_page = false
@@ -684,6 +722,7 @@ search_item_check_string = "Арт.: %%NUM%%"
 search_item_check_exact_match = true
 search_price_template = "span[class='price_value']"
 search_instock_template = "span[class='icon stock']"
+search_instock_template_reverseuse = false
 use_cookies = false
 cookies_path = ""
 info_on_item_page = false
@@ -694,7 +733,7 @@ delivery_template_on_item_page = ""
 delivery_template_on_item_page_elnum = 
 delivery_cost = 0
 free_delivery_threshold = 0
-discount_percent = 20
+discount_percent = 0
 root_entry = false
 shop_active = true
 
@@ -710,6 +749,7 @@ search_item_check_string = "%%NUM%% %%VENDOR%%"
 search_item_check_exact_match = false
 search_price_template = "div[class='item_one_price']"
 search_instock_template = "a[class='btn-ya-go item_one_to_cart btn-buy smallbut1']"
+search_instock_template_reverseuse = false
 use_cookies = false
 cookies_path = ""
 info_on_item_page = false
@@ -736,6 +776,7 @@ search_item_check_string = "%%NUM%%"
 search_item_check_exact_match = true
 search_price_template = ".price-current strong"
 search_instock_template = "button[class='shop2-product-btn']"
+search_instock_template_reverseuse = false
 use_cookies = false
 cookies_path = ""
 info_on_item_page = true
@@ -762,6 +803,7 @@ search_item_check_string = "Артикул: %%NUM%%"
 search_item_check_exact_match = false
 search_price_template = "span[data-hook='formatted-primary-price']"
 search_instock_template = "span[class='buttonnext1749291004__content']"
+search_instock_template_reverseuse = false
 use_cookies = false
 cookies_path = ""
 info_on_item_page = true
@@ -788,12 +830,13 @@ search_item_check_string = ""
 search_item_check_exact_match = false
 search_price_template = "span[class='s-price']"
 search_instock_template = "input[class='s-button js-add-button']"
+search_instock_template_reverseuse = false
 use_cookies = false
-cookies_path = ""
+cookies_path = "ruscale.ru_cookies.txt"
 info_on_item_page = false
 search_itempage_template = ""
 add_search_check = true
-add_search_check_template = ""
+add_search_check_template = "%%VENDOR%% %%NUM%%"
 delivery_template_on_item_page = ""
 delivery_template_on_item_page_elnum = 
 delivery_cost = 300
@@ -814,6 +857,7 @@ search_item_check_string = ""
 search_item_check_exact_match = false
 search_price_template = ".price span[itemprop='price']"
 search_instock_template = "button[class='btn btn-primary']"
+search_instock_template_reverseuse = false
 use_cookies = false
 cookies_path = ""
 info_on_item_page = false
@@ -823,32 +867,6 @@ add_search_check_template = ""
 delivery_template_on_item_page = ""
 delivery_template_on_item_page_elnum = 
 delivery_cost = 300
-free_delivery_threshold = 0
-discount_percent = 0
-root_entry = false
-shop_active = true
-
-[warmodel]
-url_template = "https://warmodel.ru"
-search_string_template = %%NUM%%
-search_url_template = "/search/?query=%%%SEARCH_STRING%%%"
-search_string_overrides = ""
-search_url_encode = ""
-search_item_template = "li[itemtype='http://schema.org/Product']"
-search_item_check_template = ""
-search_item_check_string = ""
-search_item_check_exact_match = false
-search_price_template = "span[class='price nowrap']"
-search_instock_template = "input[type='submit']"
-use_cookies = false
-cookies_path = ""
-info_on_item_page = false
-search_itempage_template = ""
-add_search_check = true
-add_search_check_template = "%%NUM%%"
-delivery_template_on_item_page = ""
-delivery_template_on_item_page_elnum = 
-delivery_cost = 500
 free_delivery_threshold = 0
 discount_percent = 0
 root_entry = false
@@ -866,6 +884,7 @@ search_item_check_string = "%%VENDOR%% %%NUM%%"
 search_item_check_exact_match = true
 search_price_template = ".product_price b"
 search_instock_template = "div[class='prod_avail']"
+search_instock_template_reverseuse = false
 use_cookies = false
 cookies_path = ""
 info_on_item_page = false
@@ -892,6 +911,7 @@ search_item_check_string = "%%NUM%%"
 search_item_check_exact_match = false
 search_price_template = "span[class='ty-price-num']"
 search_instock_template = "i[class='ty-icon-ok']"
+search_instock_template_reverseuse = false
 use_cookies = false
 cookies_path = ""
 info_on_item_page = false
@@ -902,6 +922,60 @@ delivery_template_on_item_page = ""
 delivery_template_on_item_page_elnum = 
 delivery_cost = 200
 free_delivery_threshold = 5000
+discount_percent = 0
+root_entry = false
+shop_active = true
+
+[lavka_orka]
+url_template = "https://goodork.ru"
+search_string_template = %%VENDOR%% %%NUM%%
+search_url_template = "/search?q=%%%SEARCH_STRING%%%"
+search_string_overrides = ""
+search_url_encode = ""
+search_item_template = "div[class='products-view-item text-static cs-br-1 js-products-view-item']"
+search_item_check_template = "div[class='products-view-meta-item cs-br-1']"
+search_item_check_string = "%%NUM%%"
+search_item_check_exact_match = false
+search_price_template = "div[class='price-number']"
+search_instock_template = "a[class='btn btn-big btn-buy products-view-buy']"
+search_instock_template_reverseuse = false
+use_cookies = false
+cookies_path = ""
+info_on_item_page = false
+search_itempage_template = ""
+add_search_check = true
+add_search_check_template = "%%VENDOR%%"
+delivery_template_on_item_page = ""
+delivery_template_on_item_page_elnum = 
+delivery_cost = 200
+free_delivery_threshold = 5000
+discount_percent = 0
+root_entry = false
+shop_active = true
+
+[mmodels]
+url_template = "https://m-models.ru"
+search_string_template = %%NUM%%
+search_url_template = "/search/?search=%%%SEARCH_STRING%%%"
+search_string_overrides = ""
+search_url_encode = ""
+search_item_template = "div[class='product-thumb transition']"
+search_itempage_template = "div[id='content']"
+search_item_check_template = ".list-unstyled a"
+search_item_check_string = "%%VENDOR%%"
+search_item_check_exact_match = false
+search_price_template = "div[class='price']"
+search_instock_template = "li:-soup-contains("Нет в наличии")"
+search_instock_template_reverseuse = true
+use_cookies = false
+cookies_path = ""
+info_on_item_page = true
+add_search_check = true
+add_search_check_template = "%%NUM%%"
+delivery_template_on_item_page = ""
+delivery_template_on_item_page_elnum = 
+delivery_cost = 300
+free_delivery_threshold = 0
 discount_percent = 0
 root_entry = false
 shop_active = true"""
