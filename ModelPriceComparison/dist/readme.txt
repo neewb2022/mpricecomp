@@ -68,3 +68,5 @@ optional arguments:
   -st, --singlethread   Execute data-fetching in single-threaded mode instead of multi-threaded by default. Slow but
                         less resource-hungry.
   -dp, --dontpause      Don't pause and wait for input after execution.
+  
+  -db, --debug          Full debug logging to log.txt
