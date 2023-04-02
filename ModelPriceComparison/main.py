@@ -1,4 +1,5 @@
 ﻿import os
+import os
 import re
 import sys
 import urllib
@@ -8,6 +9,9 @@ import configparser
 import datetime
 import multiprocessing
 import http.cookiejar
+import random
+import string
+import logging
 from decimal import Decimal
 from argparse import ArgumentParser
 from bs4 import BeautifulSoup
@@ -51,7 +55,7 @@ def getItemSearchString(shop_data, shop_configentry_to_process, basket_item_line
     basket_item_line_list = basket_item_line.split('|')
     basket_item_line_result_def = basket_item_line.replace('|', ' ')
     if len(basket_item_line_list) < 3:
-        print('Wrong basket file format on line: ' + basket_item_line)
+        printlog('Wrong basket file format on line: ' + basket_item_line)        
         basket_item_line_result = basket_item_line_result_def
     else:
         if shop_data[shop_configentry_to_process] != '':
@@ -118,7 +122,8 @@ def getItemDict(basket_item_line, shops_dict):
                 item_dict['URLs'][url_key] = search_url
                         
             headers={}
-            headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64)'                        
+            #headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64)'                        
+            headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64)' + random.choice(string.ascii_letters)            
             
             if shops_dict[shop]['use_cookies'] == 'true':
                 cj = http.cookiejar.MozillaCookieJar()            
@@ -126,8 +131,8 @@ def getItemDict(basket_item_line, shops_dict):
                 if cookies_filename != '':
                     try:
                         cj.load(cookies_filename)
-                    except:
-                        print('Error loading cookies from: "' + cookies_filename + '"')
+                    except:                                        
+                        printlog('Error loading cookies from: "' + cookies_filename + '"')                        
 
                 opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
                 urllib.request.install_opener(opener)
@@ -137,7 +142,7 @@ def getItemDict(basket_item_line, shops_dict):
             #time.sleep(10)
             search_result = response.read()                 
                         
-            soup = BeautifulSoup(search_result, "html.parser")            
+            soup = BeautifulSoup(search_result, "html.parser")                       
 
             search_item_check = False
             if shops_dict[shop]['search_item_check_template'] != '' and shops_dict[shop]['search_item_check_string'].strip() != '':
@@ -224,7 +229,7 @@ def getItemDict(basket_item_line, shops_dict):
                     if shops_dict[shop]['search_instock_template_reverseuse'] == 'true':
                         item_dict['Prices'][price_key] = 'OOS'
                         continue
-
+                    # el_item.select("span[data-auto='mainPrice']")
             el_price = el_item.select(shops_dict[shop]['search_price_template'])
             price_text = ''.join(el_price[0].find_all(text=True, recursive=False)).strip() 
 
@@ -235,9 +240,16 @@ def getItemDict(basket_item_line, shops_dict):
             price = StrToFloat(price_text)            
 
             if shops_dict[shop]['delivery_template_on_item_page'] != '':
-                el_price_delivery = el_item.select(shops_dict[shop]['delivery_template_on_item_page'])
-                price_delivery_text = el_price_delivery[int(shops_dict[shop]['delivery_template_on_item_page_elnum'])].text
-                price_delivery = StrToFloat(price_delivery_text.strip())
+
+                price_delivery = 0
+                
+                try:
+                    el_price_delivery = el_item.select(shops_dict[shop]['delivery_template_on_item_page'])
+                    price_delivery_text = el_price_delivery[int(shops_dict[shop]['delivery_template_on_item_page_elnum'])].text
+                    price_delivery = StrToFloat(price_delivery_text.strip())                    
+                except:
+                    p = 1
+
                 price = round(price + price_delivery, 2)               
 
             item_dict['Prices'][price_key] = price
@@ -369,11 +381,11 @@ search_string_template = %%VENDOR%% %%NUM%%
 search_url_template = "/wholesale?SearchText=%%%SEARCH_STRING%%%&SortType=default"
 # Web-source specific search overrides for better search results. '.' separates groups: Vendor, Num, Name. ';' separates replacement pairs in each group.
 # "|" separates value to replace and replacement value in each pair.
-search_string_overrides = "Rye Field Model|RFM;Звезда|Zvezda.ss-014|ss014."
+search_string_overrides = "Hobby Boss|HobbyBoss;Rye Field Model|RFM;Звезда|Zvezda.ss-014|ss014."
 # (optional) Force to encode search string for search URL in specific codepage. Rarely needed
 search_url_encode = ""
 # Template to find code block of desired item/items in web-page
-search_item_template = "div[class='product-snippet_ProductSnippet__content__lido9p']"
+search_item_template = "div[class='product-snippet_ProductSnippet__content__bz0lq']"
 # (optional) Template to find block to check if item is correct (not same string in name etc.) like unique item num, sku or so, for better search results, works only with 'search_item_check_template'
 search_item_check_template = ""
 # (optional) Search string template to check if item is correct, keywords processed same as for 'search_string_template', works only with 'search_item_check_template'
@@ -381,15 +393,15 @@ search_item_check_string = ""
 # (optional) Search string must match found check string exactly (only symbols count, not spaces or non-printable)
 search_item_check_exact_match = false
 # Template to find price code block of desired item/items in web-page
-search_price_template = "div[class='snow-price_SnowPrice__mainS__18x8np']" 
+search_price_template = "div[class='snow-price_SnowPrice__mainS__azqpin']" 
 # (optional) Template to find code block for determining item availability
 search_instock_template = ""
 # If block is found from 'search_instock_template' - mark as not available, by default - skip
 search_instock_template_reverseuse = false
 # Use site cookies
-use_cookies = false
+use_cookies = true
 # Path to load site cookies from, must be in netscape format (for example may be generated manually with 'get cookies.txt' extension for chrome-based browsers)
-cookies_path = "ali_cookies.txt"
+cookies_path = "home.aliexpress.ru_cookies.txt"
 # Needed for some shops if full desired info only situated on item page
 info_on_item_page = true
 # Template to find block to extract data on item page, works only with 'info_on_item_page = true'
@@ -399,13 +411,15 @@ add_search_check = true
 # (optional) Check string template similar as for 'search_string_template' if needed, if not filled - equals to 'search_string_template'
 add_search_check_template = "%%VENDOR%% %%NUM%%"
 # (optional) Needed for some shops (ali for example) to find block with delivery price on item page
-delivery_template_on_item_page = "span[class='snow-ali-kit_Typography__base__1shggo snow-ali-kit_Typography__base__1shggo snow-ali-kit_Typography__sizeTextM__1shggo']"
+delivery_template_on_item_page = "div[class='SnowProductDelivery_SnowProductDelivery__item__fyuvd'] span[class*='snow-ali-kit_Typography__base__1shggo snow-ali-kit_Typography__base__1shggo snow-ali-kit_Typography__sizeTextM__1shggo SnowProductDelivery_SnowProductDelivery__typographyM__fyuvd']"
 # Needed for some shops (ali for example) to find block with delivery price on item page
 delivery_template_on_item_page_elnum = 1
 # If shop has delivery price and certain amount of your order (basket) to make delivery free of charge - this threshold can be entered here.
 free_delivery_threshold = 0
 # If shop has delivery price - amount can be entered here. During calculation deliver cost splits equally between item prices of certain shop.
 delivery_cost = 0
+# If true - splits shop delivery cost on whole basket, otherwise appends delivery cost to each item
+split_delivery_cost_on_basket = false
 # Discount in percent from 100 applied to all items from shop before delivery cost.
 discount_percent = 0
 # Marks root web-source (scalemates for exmpl.) to download item full naming, root entry not used to search price data
@@ -419,15 +433,15 @@ search_string_template = %%VENDOR%% %%NUM%%
 search_url_template = "/search?text=%%%SEARCH_STRING%%%"
 search_string_overrides = ""
 search_url_encode = ""
-search_item_template = "div[class='_2im8- _2S9MU _2jRxX']"
+search_item_template = "article[class='LYpqx _61qCP _2K3XA cia-vs cia-cs']"
 search_item_check_template = ""
 search_item_check_string = ""
 search_item_check_exact_match = false
 search_price_template = "span[data-auto='mainPrice'] span"
 search_instock_template = "span[class='_1CSaT _2mcnk']"
 search_instock_template_reverseuse = false
-use_cookies = false
-cookies_path = "yandex_cookies.txt"
+use_cookies = true
+cookies_path = "market.yandex.ru_cookies.txt"
 info_on_item_page = false
 search_itempage_template = ""
 add_search_check = true
@@ -435,7 +449,36 @@ add_search_check_template = "%%NUM%%"
 delivery_template_on_item_page = ""
 delivery_template_on_item_page_elnum = 
 delivery_cost = 0
+split_delivery_cost_on_basket = false
 free_delivery_threshold = 0
+discount_percent = 0
+root_entry = false
+shop_active = true
+
+[bandi]
+url_template = "https://bandisales.ru"
+search_string_template = %%VENDOR%% %%NUM%%
+search_url_template = "/catalog/?q=%%%SEARCH_STRING%%%"
+search_string_overrides = ""
+search_url_encode = "cp1251"
+search_item_template = "div[class='item']"
+search_item_check_template = ""
+search_item_check_string = ""
+search_item_check_exact_match = false
+search_price_template = "div[class='price']"
+search_instock_template =
+search_instock_template_reverseuse = false
+use_cookies = false
+cookies_path = 
+info_on_item_page = false
+search_itempage_template = ""
+add_search_check = true
+add_search_check_template = "%%VENDOR%%"
+delivery_template_on_item_page = ""
+delivery_template_on_item_page_elnum = 
+delivery_cost = 300
+split_delivery_cost_on_basket = false
+free_delivery_threshold = 2000
 discount_percent = 0
 root_entry = false
 shop_active = true
@@ -453,8 +496,8 @@ search_item_check_exact_match = false
 search_price_template = "p[class='price-new']"
 search_instock_template = ""
 search_instock_template_reverseuse = false
-use_cookies = false
-cookies_path = "leonardo_cookies.txt"
+use_cookies = true
+cookies_path = "leonardo.ru_cookies.txt"
 info_on_item_page = false
 search_itempage_template = ""
 add_search_check = true
@@ -462,6 +505,7 @@ add_search_check_template = "%%VENDOR%% %%NUM%%"
 delivery_template_on_item_page = ""
 delivery_template_on_item_page_elnum = 
 delivery_cost = 0
+split_delivery_cost_on_basket = false
 free_delivery_threshold = 0
 discount_percent = 0
 root_entry = false
@@ -473,22 +517,23 @@ search_string_template = %%VENDOR%% %%NUM%%
 search_url_template = "/search/results/?qt=%%%SEARCH_STRING%%%"
 search_string_overrides = ""
 search_url_encode = ""
-search_item_template = "div[class='pL pP BQ']"
-search_item_check_template = "td[class='Al']"
+search_item_template = "div[class='C_9 Dd DM']"
+search_item_check_template = ""
 search_item_check_string = "%%NUM%%"
-search_item_check_exact_match = true
-search_price_template = ".V_"
+search_item_check_exact_match = false
+search_price_template = "span[class='_9F _9G']"
 search_instock_template = ""
 search_instock_template_reverseuse = false
-use_cookies = false
-cookies_path = "detmir_cookies.txt"
-info_on_item_page = true
+use_cookies = true
+cookies_path = "detmir.ru_cookies.txt"
+info_on_item_page = false
 search_itempage_template = "div[class='a']"
-add_search_check = false
-add_search_check_template = %%VENDOR%%
+add_search_check = true
+add_search_check_template = %%VENDOR%% %%NUM%%
 delivery_template_on_item_page = ""
 delivery_template_on_item_page_elnum = 
 delivery_cost = 0
+split_delivery_cost_on_basket = false
 free_delivery_threshold = 0
 discount_percent = 0
 root_entry = false
@@ -516,6 +561,7 @@ add_search_check_template = "%%VENDOR%% %%NUM%%"
 delivery_template_on_item_page = ""
 delivery_template_on_item_page_elnum = 
 delivery_cost = 300
+split_delivery_cost_on_basket = false
 free_delivery_threshold = 0
 discount_percent = 0
 root_entry = false
@@ -534,7 +580,7 @@ search_item_check_exact_match = true
 search_price_template = "div[class='price']"
 search_instock_template = "div[class='shiping__wrap']"
 search_instock_template_reverseuse = false
-use_cookies = false
+use_cookies = true
 cookies_path = "model-lavka_cookies.txt"
 info_on_item_page = false
 search_itempage_template = ""
@@ -543,6 +589,7 @@ add_search_check_template = ""
 delivery_template_on_item_page = ""
 delivery_template_on_item_page_elnum = 
 delivery_cost = 200
+split_delivery_cost_on_basket = false
 free_delivery_threshold = 2000
 discount_percent = 0
 root_entry = false
@@ -570,6 +617,7 @@ add_search_check_template = ""
 delivery_template_on_item_page = ""
 delivery_template_on_item_page_elnum = 
 delivery_cost = 200
+split_delivery_cost_on_basket = false
 free_delivery_threshold = 0
 discount_percent = 0
 root_entry = false
@@ -597,6 +645,7 @@ add_search_check_template = ""
 delivery_template_on_item_page = ""
 delivery_template_on_item_page_elnum = 
 delivery_cost = 200
+split_delivery_cost_on_basket = false
 free_delivery_threshold = 0
 discount_percent = 0
 root_entry = false
@@ -624,6 +673,7 @@ add_search_check_template = ""
 delivery_template_on_item_page = ""
 delivery_template_on_item_page_elnum = 
 delivery_cost = 200
+split_delivery_cost_on_basket = false
 free_delivery_threshold = 0
 discount_percent = 0
 root_entry = false
@@ -651,6 +701,7 @@ add_search_check_template = ""
 delivery_template_on_item_page = ""
 delivery_template_on_item_page_elnum = 
 delivery_cost = 200
+split_delivery_cost_on_basket = false
 free_delivery_threshold = 0
 discount_percent = 0
 root_entry = false
@@ -678,6 +729,7 @@ add_search_check_template = ""
 delivery_template_on_item_page = ""
 delivery_template_on_item_page_elnum = 
 delivery_cost = 200
+split_delivery_cost_on_basket = false
 free_delivery_threshold = 3000
 discount_percent = 0
 root_entry = false
@@ -705,6 +757,7 @@ add_search_check_template = ""
 delivery_template_on_item_page = ""
 delivery_template_on_item_page_elnum = 
 delivery_cost = 200
+split_delivery_cost_on_basket = false
 free_delivery_threshold = 3000
 discount_percent = 0
 root_entry = false
@@ -732,6 +785,7 @@ add_search_check_template = ""
 delivery_template_on_item_page = ""
 delivery_template_on_item_page_elnum = 
 delivery_cost = 0
+split_delivery_cost_on_basket = false
 free_delivery_threshold = 0
 discount_percent = 0
 root_entry = false
@@ -759,6 +813,7 @@ add_search_check_template = ""
 delivery_template_on_item_page = ""
 delivery_template_on_item_page_elnum = 
 delivery_cost = 200
+split_delivery_cost_on_basket = false
 free_delivery_threshold = 7500
 discount_percent = 0
 root_entry = false
@@ -786,6 +841,35 @@ add_search_check_template = "%%NUM%% %%VENDOR%%"
 delivery_template_on_item_page = ""
 delivery_template_on_item_page_elnum = 
 delivery_cost = 350
+split_delivery_cost_on_basket = false
+free_delivery_threshold = 0
+discount_percent = 0
+root_entry = false
+shop_active = true
+
+[mirmod]
+url_template = "https://m-models.ru"
+search_string_template = %%NUM%%
+search_url_template = "/search/?search=%%%SEARCH_STRING%%%"
+search_string_overrides = ""
+search_url_encode = ""
+search_item_template = "div[class='product-thumb transition']"
+search_itempage_template = "div[id='content']"
+search_item_check_template = ".list-unstyled a"
+search_item_check_string = "%%VENDOR%%"
+search_item_check_exact_match = false
+search_price_template = "div[class='price']"
+search_instock_template = "li:-soup-contains("Нет в наличии")"
+search_instock_template_reverseuse = true
+use_cookies = false
+cookies_path = ""
+info_on_item_page = true
+add_search_check = true
+add_search_check_template = "%%NUM%%"
+delivery_template_on_item_page = ""
+delivery_template_on_item_page_elnum = 
+delivery_cost = 300
+split_delivery_cost_on_basket = false
 free_delivery_threshold = 0
 discount_percent = 0
 root_entry = false
@@ -802,7 +886,7 @@ search_item_check_template = "div[class='_1rwRc']"
 search_item_check_string = "Артикул: %%NUM%%"
 search_item_check_exact_match = false
 search_price_template = "span[data-hook='formatted-primary-price']"
-search_instock_template = "span[class='buttonnext1749291004__content']"
+search_instock_template = "span[class='buttonnext1279070926__content']"
 search_instock_template_reverseuse = false
 use_cookies = false
 cookies_path = ""
@@ -813,6 +897,7 @@ add_search_check_template = ""
 delivery_template_on_item_page = ""
 delivery_template_on_item_page_elnum = 
 delivery_cost = 310
+split_delivery_cost_on_basket = false
 free_delivery_threshold = 0
 discount_percent = 0
 root_entry = false
@@ -831,7 +916,7 @@ search_item_check_exact_match = false
 search_price_template = "span[class='s-price']"
 search_instock_template = "input[class='s-button js-add-button']"
 search_instock_template_reverseuse = false
-use_cookies = false
+use_cookies = true
 cookies_path = "ruscale.ru_cookies.txt"
 info_on_item_page = false
 search_itempage_template = ""
@@ -840,6 +925,7 @@ add_search_check_template = "%%VENDOR%% %%NUM%%"
 delivery_template_on_item_page = ""
 delivery_template_on_item_page_elnum = 
 delivery_cost = 300
+split_delivery_cost_on_basket = false
 free_delivery_threshold = 0
 discount_percent = 0
 root_entry = false
@@ -867,6 +953,7 @@ add_search_check_template = ""
 delivery_template_on_item_page = ""
 delivery_template_on_item_page_elnum = 
 delivery_cost = 300
+split_delivery_cost_on_basket = false
 free_delivery_threshold = 0
 discount_percent = 0
 root_entry = false
@@ -894,6 +981,7 @@ add_search_check_template = "%%NUM%%"
 delivery_template_on_item_page = ""
 delivery_template_on_item_page_elnum = 
 delivery_cost = 300
+split_delivery_cost_on_basket = false
 free_delivery_threshold = 0
 discount_percent = 0
 root_entry = false
@@ -921,6 +1009,7 @@ add_search_check_template = "%%VENDOR%% %%NUM%%"
 delivery_template_on_item_page = ""
 delivery_template_on_item_page_elnum = 
 delivery_cost = 200
+split_delivery_cost_on_basket = false
 free_delivery_threshold = 5000
 discount_percent = 0
 root_entry = false
@@ -948,33 +1037,35 @@ add_search_check_template = "%%VENDOR%%"
 delivery_template_on_item_page = ""
 delivery_template_on_item_page_elnum = 
 delivery_cost = 200
+split_delivery_cost_on_basket = false
 free_delivery_threshold = 5000
 discount_percent = 0
 root_entry = false
 shop_active = true
 
-[mmodels]
-url_template = "https://m-models.ru"
-search_string_template = %%NUM%%
-search_url_template = "/search/?search=%%%SEARCH_STRING%%%"
+[leib_company]
+url_template = "https://leib-company.ru"
+search_string_template = %%VENDOR%% %%NUM%%
+search_url_template = "/search?controller=search&search_query=%%%SEARCH_STRING%%%"
 search_string_overrides = ""
 search_url_encode = ""
-search_item_template = "div[class='product-thumb transition']"
-search_itempage_template = "div[id='content']"
-search_item_check_template = ".list-unstyled a"
-search_item_check_string = "%%VENDOR%%"
+search_item_template = "div[class='product-container']"
+search_itempage_template = ""
+search_item_check_template = ""
+search_item_check_string = ""
 search_item_check_exact_match = false
-search_price_template = "div[class='price']"
-search_instock_template = "li:-soup-contains("Нет в наличии")"
-search_instock_template_reverseuse = true
+search_price_template = "span[class='price']"
+search_instock_template = "span[class='newstok-list']"
+search_instock_template_reverseuse = false
 use_cookies = false
 cookies_path = ""
-info_on_item_page = true
+info_on_item_page = false
 add_search_check = true
 add_search_check_template = "%%NUM%%"
 delivery_template_on_item_page = ""
 delivery_template_on_item_page_elnum = 
 delivery_cost = 300
+split_delivery_cost_on_basket = false
 free_delivery_threshold = 0
 discount_percent = 0
 root_entry = false
@@ -1033,12 +1124,20 @@ def sum_delivery(shops_dict, prices_dict):
                 prices_dict[item_key_toapply]['Prices']['price' + str(shop_num)] = round(prices_dict[item_key_toapply]['Prices']['price' + str(shop_num)] * (1 - float(shops_dict[shop_key]['discount_percent'])/100),2)
             prices_dict['SUM']['Prices']['sum' + str(shop_num)] = round(prices_dict['SUM']['Prices']['sum' + str(shop_num)] + prices_dict[item_key_toapply]['Prices']['price' + str(shop_num)], 2)
 
-        if float(shops_dict[shop_key]['free_delivery_threshold']) != 0 and prices_dict['SUM']['Prices']['sum' + str(shop_num)] < float(shops_dict[shop_key]['free_delivery_threshold']):                           
+        if shops_dict[shop_key]['split_delivery_cost_on_basket'] == 'true':
+                        
+            if (float(shops_dict[shop_key]['free_delivery_threshold']) != 0 and prices_dict['SUM']['Prices']['sum' + str(shop_num)] < float(shops_dict[shop_key]['free_delivery_threshold'])) or float(shops_dict[shop_key]['free_delivery_threshold']) == 0:                           
+                prices_dict['SUM']['Prices']['sum' + str(shop_num)] = 0
+                for item_key_toapply in item_keys_toapply:            
+                    prices_dict[item_key_toapply]['Prices']['price' + str(shop_num)] = round(prices_dict[item_key_toapply]['Prices']['price' + str(shop_num)] + float(shops_dict[shop_key]['delivery_cost']) / len(item_keys_toapply), 2)
+                    prices_dict['SUM']['Prices']['sum' + str(shop_num)] = round(prices_dict['SUM']['Prices']['sum' + str(shop_num)] + prices_dict[item_key_toapply]['Prices']['price' + str(shop_num)], 2)
+        else:
             prices_dict['SUM']['Prices']['sum' + str(shop_num)] = 0
             for item_key_toapply in item_keys_toapply:            
-                prices_dict[item_key_toapply]['Prices']['price' + str(shop_num)] = round(prices_dict[item_key_toapply]['Prices']['price' + str(shop_num)] + float(shops_dict[shop_key]['delivery_cost']) / len(item_keys_toapply), 2)
-                prices_dict['SUM']['Prices']['sum' + str(shop_num)] = round(prices_dict['SUM']['Prices']['sum' + str(shop_num)] + prices_dict[item_key_toapply]['Prices']['price' + str(shop_num)], 2)
-                     
+                if (float(shops_dict[shop_key]['free_delivery_threshold']) != 0 and prices_dict[item_key_toapply]['Prices']['price' + str(shop_num)] < float(shops_dict[shop_key]['free_delivery_threshold'])) or float(shops_dict[shop_key]['free_delivery_threshold']) == 0:                           
+                    prices_dict[item_key_toapply]['Prices']['price' + str(shop_num)] = round(prices_dict[item_key_toapply]['Prices']['price' + str(shop_num)] + float(shops_dict[shop_key]['delivery_cost']), 2)
+                prices_dict['SUM']['Prices']['sum' + str(shop_num)] = round(prices_dict['SUM']['Prices']['sum' + str(shop_num)] + prices_dict[item_key_toapply]['Prices']['price' + str(shop_num)], 2)                        
+
         shop_num = shop_num + 1       
 
 def getHtmExportTemplate():
@@ -1134,9 +1233,14 @@ def export_result_file(shops_dict, prices_dict, export_filename):
     rows_text = getRowsText(prices_dict)
     htm_result = htm_result.replace('%%%ROWS%%%', rows_text)
     with open(export_filename, encoding='utf-8', mode='wt') as result_file:
-        result_file.write(htm_result)
-        print('\nResults exported to: ' + '"' + result_file.name + '"')
+        result_file.write(htm_result)        
+        printlog('\nResults exported to: ' + '"' + result_file.name + '"')
+
     print()
+
+def printlog(message):
+    print(message)
+    logging.info(message)    
 
 def appquit(message, dontpause = False):
     """
@@ -1153,9 +1257,10 @@ def appquit(message, dontpause = False):
         sys.exit()
 
 def app_version():
-    return '1.0.0.2'
+    return '1.0.0.3'
 
-def main():
+def main():  
+
   """
    Gathers all data, generates displays and writes export html-file with table   
   """   
@@ -1178,21 +1283,31 @@ Model Price Comparison """ + app_version() + '\n'
                     help="Execute data-fetching in single-threaded mode instead of multi-threaded by default. Slow but less resource-hungry.")
   parser.add_argument("-dp", "--dontpause", action="store_true",
                     help="Don't pause and wait for input after execution.")
+  parser.add_argument("-db", "--debug", action="store_true",
+                    help="Full debug logging to log.txt")
 
   args = parser.parse_args() 
   
   shops = 'default_shops.ini'
   basket = 'default_basket.ini'
   exportfilename = 'default_basket.htm'
-    
+
+  debug_log = args.debug
+  if debug_log:
+      logging.getLogger().setLevel(logging.DEBUG)
+  else:
+      logging.getLogger().setLevel(logging.INFO)
+
+  logging.captureWarnings(True)
+
   if args.shops != None:
     shops = args.shops  
   else:
-    print('Shops config file not specified, using default destination: ' + '"' + shops + '"')  
+    printlog('Shops config file not specified, using default destination: ' + '"' + shops + '"')  
   if args.basket != None:
     basket = args.basket    
   else:
-    print('Basket config file not specified, using default destination: ' + '"' + basket + '"')  
+    printlog('Basket config file not specified, using default destination: ' + '"' + basket + '"')  
   if args.exportfile != None:
     exportfilename = args.exportfile    
   
@@ -1200,14 +1315,14 @@ Model Price Comparison """ + app_version() + '\n'
   dontpause = args.dontpause
 
   if singlethread:
-      print('Fetchinbg data in single-threaded mode, may be slow..')  
+      printlog('Fetchinbg data in single-threaded mode, may be slow..')  
     
   try:
       if not os.path.exists(shops):
-          print('Can\'t find shops config file, creating default one in: ' + '"' + shops + '"')      
+          printlog('Can\'t find shops config file, creating default one in: ' + '"' + shops + '"')      
           createShopsConfig(shops)
       else:
-          print('Found shops config file in: ' + '"' + shops + '"')      
+          printlog('Found shops config file in: ' + '"' + shops + '"')      
   except:
       appquit('Error while creating shop config file in:' + shops, dontpause)      
 
@@ -1219,10 +1334,10 @@ Model Price Comparison """ + app_version() + '\n'
 
   try:
       if not os.path.exists(basket):
-          print('Can\'t find basket config file, creating default one in: ' + '"' + basket + '"')      
+          printlog('Can\'t find basket config file, creating default one in: ' + '"' + basket + '"')      
           createBasketConfig(basket)
       else:
-          print('Found basket config file in: ' + '"' + basket + '"')      
+          printlog('Found basket config file in: ' + '"' + basket + '"')      
   except:
       appquit('Error while creating shop config file in:' + basket, dontpause)     
    
@@ -1256,5 +1371,6 @@ Model Price Comparison """ + app_version() + '\n'
   appquit('', dontpause)
 
 if __name__ == '__main__':
-  multiprocessing.freeze_support()
+  logging.basicConfig(filename="log.txt",filemode='w',level=logging.DEBUG,format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+  multiprocessing.freeze_support()  
   main()

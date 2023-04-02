@@ -1,4 +1,4 @@
-MODEL PRICE COMPARISON README 1.0.0.2
+MODEL PRICE COMPARISON README 1.0.0.3
 ----------------------
 
 CONTENTS OF THIS FILE
@@ -63,7 +63,7 @@ optional arguments:
                         Path to shops config file to fetch data from. If not specified or do not exists - will be
                         created with default content.
   -e EXPORTFILE, --export EXPORTFILE
-                        Path to html-file to export result data. If not specified or do not exists - will be created
+                        Path to html-file to export results data. If not specified or do not exists - will be created
                         with name similar to basket config file name.
   -st, --singlethread   Execute data-fetching in single-threaded mode instead of multi-threaded by default. Slow but
                         less resource-hungry.
