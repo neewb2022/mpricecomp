@@ -1,0 +1,6 @@
+2023-03-24 21:45:48,047 - root - INFO - Shops config file not specified, using default destination: "default_shops.ini"
+2023-03-24 21:45:48,047 - root - INFO - Basket config file not specified, using default destination: "default_basket.ini"
+2023-03-24 21:45:48,047 - root - INFO - Found shops config file in: "default_shops.ini"
+2023-03-24 21:45:48,050 - root - INFO - Found basket config file in: "default_basket.ini"
+2023-03-24 21:45:57,746 - root - INFO - 
+Results exported to: "exmp_export.htm"
